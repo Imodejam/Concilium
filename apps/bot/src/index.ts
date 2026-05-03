@@ -67,8 +67,8 @@ bot.command('new', async (ctx) => {
       },
     });
     await ctx.reply(
-      `🏛️ Request submitted to the council.\nrequest_id: \`${stored.request_id}\`\n\nUse /status to track progress.`,
-      { parse_mode: 'Markdown' },
+      `🏛️ Request submitted to the council.\nrequest_id: <code>${esc(stored.request_id)}</code>\n\nUse /status to track progress.`,
+      { parse_mode: 'HTML' },
     );
   } catch (err) {
     await ctx.reply(`❌ Error: ${(err as Error).message}`);
@@ -83,9 +83,9 @@ bot.command('status', async (ctx) => {
       return;
     }
     const lines = requests.slice(0, 5).map((r) =>
-      `• \`${r.request_id.slice(0, 8)}\` — ${statusEmoji(r.status)} ${r.status} — ${r.title.slice(0, 60)}`,
+      `• <code>${esc(r.request_id.slice(0, 8))}</code> — ${statusEmoji(r.status)} ${r.status} — ${esc(r.title.slice(0, 60))}`,
     );
-    await ctx.reply('🏛️ Latest requests:\n' + lines.join('\n'), { parse_mode: 'Markdown' });
+    await ctx.reply('🏛️ Latest requests:\n' + lines.join('\n'), { parse_mode: 'HTML' });
   } catch (err) {
     await ctx.reply(`❌ Error: ${(err as Error).message}`);
   }
@@ -103,7 +103,7 @@ bot.command('decision', async (ctx) => {
       await ctx.reply('❌ No decision found for this id.');
       return;
     }
-    await ctx.reply(formatDecision(decision), { parse_mode: 'Markdown' });
+    await ctx.reply(formatDecision(decision), { parse_mode: 'HTML' });
   } catch (err) {
     await ctx.reply(`❌ Error: ${(err as Error).message}`);
   }
@@ -125,10 +125,10 @@ bot.command('debug', async (ctx) => {
       return;
     }
     const lines = data.contributions.map((c) =>
-      `• *${c.counselor_role}* (${c.counselor_id}): ${c.output.recommendation} — ${c.output.summary.slice(0, 120)}`,
+      `• <b>${esc(c.counselor_role)}</b> (${esc(c.counselor_id)}): ${esc(c.output.recommendation)} — ${esc(c.output.summary.slice(0, 200))}`,
     );
     await ctx.reply(`🔍 Contributions (${data.contributions.length}):\n${lines.join('\n')}`, {
-      parse_mode: 'Markdown',
+      parse_mode: 'HTML',
     });
   } catch (err) {
     await ctx.reply(`❌ Error: ${(err as Error).message}`);
@@ -204,22 +204,27 @@ function statusEmoji(s: string): string {
 
 function formatDecision(d: DecisionOutput): string {
   const lines = [
-    '🏛️ *Concilium — Decision*',
+    '🏛️ <b>Concilium — Decision</b>',
     '',
-    `${decisionEmoji(d.decision)} *Decision:* ${d.decision.replace(/_/g, ' ')}`,
-    `${riskEmoji(d.risk_level)} *Risk:* ${d.risk_level}`,
-    `*Confidence:* ${(d.confidence * 100).toFixed(0)}%`,
+    `${decisionEmoji(d.decision)} <b>Decision:</b> ${esc(d.decision.replace(/_/g, ' '))}`,
+    `${riskEmoji(d.risk_level)} <b>Risk:</b> ${esc(d.risk_level)}`,
+    `<b>Confidence:</b> ${(d.confidence * 100).toFixed(0)}%`,
     '',
-    `*Motivation:* ${d.motivation}`,
+    `<b>Motivation:</b> ${esc(d.motivation)}`,
   ];
   if (d.conditions.length > 0) {
-    lines.push('', '*Conditions:*', ...d.conditions.map((c) => `• ${c}`));
+    lines.push('', '<b>Conditions:</b>', ...d.conditions.map((c) => `• ${esc(c)}`));
   }
   if (d.suggested_actions.length > 0) {
-    lines.push('', '*Suggested actions:*', ...d.suggested_actions.map((c) => `• ${c}`));
+    lines.push('', '<b>Suggested actions:</b>', ...d.suggested_actions.map((c) => `• ${esc(c)}`));
   }
   if (d.requires_human_confirmation) {
     lines.push('', '⚠️ Requires human confirmation before execution.');
   }
   return lines.join('\n');
+}
+
+/** Escape special chars for Telegram HTML parse_mode. */
+function esc(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
