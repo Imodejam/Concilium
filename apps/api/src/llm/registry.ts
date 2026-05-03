@@ -1,6 +1,7 @@
 import { type ProviderConfig, isCliProviderKind } from '@concilium/shared';
 import { listProviders } from '../storage/repos.js';
 import { AnthropicProvider } from './anthropic.js';
+import { OpenAIProvider } from './openai.js';
 import { CliProvider } from './cli.js';
 import { LlmError, type LlmProvider } from './types.js';
 
@@ -26,7 +27,7 @@ function build(cfg: ProviderConfig, apiKey: string): LlmProvider {
     case 'anthropic':
       return new AnthropicProvider(cfg, apiKey);
     case 'openai':
-      throw new LlmError('OpenAI HTTP adapter not yet implemented');
+      return new OpenAIProvider(cfg, apiKey);
     default:
       throw new LlmError(`Unsupported provider kind: ${cfg.kind}`);
   }
