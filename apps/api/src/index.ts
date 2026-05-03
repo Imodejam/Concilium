@@ -19,7 +19,9 @@ import {
   saveSenator,
   deleteSenator,
   listProviders,
+  loadProvider,
   saveProvider,
+  deleteProvider,
   listContributionsForRequest,
   appendAudit,
 } from './storage/repos.js';
@@ -166,14 +168,46 @@ app.get('/providers', async () => {
   return { data };
 });
 
+app.get<{ Params: { id: string } }>('/providers/:id', async (req, reply) => {
+  const p = await loadProvider(req.params.id);
+  if (!p) {
+    reply.code(404).send({ error: 'Provider not found' });
+    return;
+  }
+  return { data: p };
+});
+
 app.post('/providers', async (req, reply) => {
   const parsed = ProviderConfigSchema.safeParse(req.body);
   if (!parsed.success) {
     reply.code(400).send({ error: 'Invalid provider', details: parsed.error.flatten() });
     return;
   }
+  if (!/^[a-z0-9][a-z0-9_-]*$/i.test(parsed.data.id)) {
+    reply.code(400).send({ error: 'Invalid provider id (use letters/digits/_/-)' });
+    return;
+  }
   await saveProvider(parsed.data);
   reply.code(201).send({ data: parsed.data });
+});
+
+app.delete<{ Params: { id: string } }>('/providers/:id', async (req, reply) => {
+  // Refuse if any enabled senator depends on this provider — otherwise the
+  // next deliberation breaks silently.
+  const senators = await listSenators();
+  const usedBy = senators.filter(
+    (s) => s.config.enabled && s.config.provider_id === req.params.id,
+  );
+  if (usedBy.length > 0) {
+    reply.code(409).send({
+      error: `Provider is used by ${usedBy.length} enabled senator(s): ${usedBy
+        .map((s) => s.config.id)
+        .join(', ')}. Disable them or move to another provider first.`,
+    });
+    return;
+  }
+  const removed = await deleteProvider(req.params.id);
+  reply.code(removed ? 204 : 404).send();
 });
 
 // ── Boot ───────────────────────────────────────────────────────────────────

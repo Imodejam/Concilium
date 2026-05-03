@@ -147,8 +147,19 @@ export async function loadProvider(providerId: string): Promise<ProviderConfig |
 
 export async function saveProvider(provider: ProviderConfig): Promise<void> {
   const file = path.join(paths.providers, `${provider.id}.md`);
-  const body = `# Provider: ${provider.display_name}\n\nKind: \`${provider.kind}\`. Model default: \`${provider.default_model}\`.\n`;
+  const body = `# Provider: ${provider.display_name}\n\nKind: \`${provider.kind}\`. Model default: \`${provider.default_model}\`. La chiave API è risolta a runtime dalla variabile d'ambiente \`${provider.api_key_ref}\`.\n`;
   await writeMd(file, provider as unknown as Record<string, unknown>, body);
+}
+
+export async function deleteProvider(providerId: string): Promise<boolean> {
+  const file = path.join(paths.providers, `${providerId}.md`);
+  try {
+    await (await import('node:fs')).promises.unlink(file);
+    return true;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return false;
+    throw err;
+  }
 }
 
 // ── Contributions ──────────────────────────────────────────────────────────

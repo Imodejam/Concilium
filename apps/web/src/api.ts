@@ -49,4 +49,11 @@ export const api = {
   listProviders:   () => http<ProviderConfig[]>('/providers'),
   saveProvider:    (cfg: ProviderConfig) =>
     http<ProviderConfig>('/providers', { method: 'POST', body: JSON.stringify(cfg) }),
+  deleteProvider:  async (id: string) => {
+    const res = await fetch(`${BASE}/providers/${id}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+    }
+  },
 };
