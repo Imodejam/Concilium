@@ -147,7 +147,11 @@ export async function loadProvider(providerId: string): Promise<ProviderConfig |
 
 export async function saveProvider(provider: ProviderConfig): Promise<void> {
   const file = path.join(paths.providers, `${provider.id}.md`);
-  const body = `# Provider: ${provider.display_name}\n\nKind: \`${provider.kind}\`. Model default: \`${provider.default_model}\`. La chiave API è risolta a runtime dalla variabile d'ambiente \`${provider.api_key_ref}\`.\n`;
+  const isCli = provider.kind === 'claude-code' || provider.kind === 'openai-codex';
+  const auth = isCli
+    ? `Subprocess CLI \`${provider.command ?? provider.kind}\` — auth gestita dal login del binary sul server.`
+    : `La chiave API è risolta a runtime dalla variabile d'ambiente \`${provider.api_key_ref}\`.`;
+  const body = `# Provider: ${provider.display_name}\n\nKind: \`${provider.kind}\`. Model default: \`${provider.default_model}\`. ${auth}\n`;
   await writeMd(file, provider as unknown as Record<string, unknown>, body);
 }
 

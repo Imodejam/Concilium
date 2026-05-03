@@ -1,6 +1,7 @@
-import { type ProviderConfig } from '@senatum/shared';
+import { type ProviderConfig, isCliProviderKind } from '@senatum/shared';
 import { listProviders } from '../storage/repos.js';
 import { AnthropicProvider } from './anthropic.js';
+import { CliProvider } from './cli.js';
 import { LlmError, type LlmProvider } from './types.js';
 
 const cache = new Map<string, LlmProvider>();
@@ -11,18 +12,23 @@ export async function getProvider(providerId: string): Promise<LlmProvider> {
   const all = await listProviders();
   const found = all.find((p) => p.id === providerId && p.enabled);
   if (!found) throw new LlmError(`Provider ${providerId} not found or disabled`);
-  const apiKey = process.env[found.api_key_ref] ?? '';
+  const apiKey = found.api_key_ref ? (process.env[found.api_key_ref] ?? '') : '';
   const instance = build(found, apiKey);
   cache.set(providerId, instance);
   return instance;
 }
 
 function build(cfg: ProviderConfig, apiKey: string): LlmProvider {
+  if (isCliProviderKind(cfg.kind)) {
+    return new CliProvider(cfg);
+  }
   switch (cfg.kind) {
     case 'anthropic':
       return new AnthropicProvider(cfg, apiKey);
     case 'openai':
-      throw new LlmError('OpenAI adapter not yet implemented');
+      throw new LlmError('OpenAI HTTP adapter not yet implemented');
+    default:
+      throw new LlmError(`Unsupported provider kind: ${cfg.kind}`);
   }
 }
 

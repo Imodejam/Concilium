@@ -3,17 +3,39 @@ import type { ProviderConfig } from '@senatum/shared';
 import { api } from '../../api.js';
 import { Field } from './formField.js';
 
-const KINDS: ProviderConfig['kind'][] = ['anthropic', 'openai'];
+const KINDS: ProviderConfig['kind'][] = ['anthropic', 'openai', 'claude-code', 'openai-codex'];
+
+const KIND_LABELS: Record<ProviderConfig['kind'], string> = {
+  anthropic: 'anthropic — HTTP API',
+  openai: 'openai — HTTP API',
+  'claude-code': 'claude-code — local CLI (subscription)',
+  'openai-codex': 'openai-codex — local CLI (subscription)',
+};
 
 const DEFAULT_MODELS: Record<ProviderConfig['kind'], string> = {
   anthropic: 'claude-sonnet-4-6',
   openai: 'gpt-4o-mini',
+  'claude-code': 'claude-code',
+  'openai-codex': 'codex',
 };
 
 const DEFAULT_KEY_REFS: Record<ProviderConfig['kind'], string> = {
   anthropic: 'ANTHROPIC_API_KEY',
   openai: 'OPENAI_API_KEY',
+  'claude-code': '',
+  'openai-codex': '',
 };
+
+const DEFAULT_COMMANDS: Record<ProviderConfig['kind'], string> = {
+  anthropic: '',
+  openai: '',
+  'claude-code': 'claude',
+  'openai-codex': 'codex',
+};
+
+function isCliKind(k: ProviderConfig['kind']): boolean {
+  return k === 'claude-code' || k === 'openai-codex';
+}
 
 type EditState =
   | { kind: 'closed' }
@@ -85,7 +107,12 @@ export default function ProvidersSection({ setError }: Props) {
             </div>
             <p className="text-zinc-300 mt-1">{p.display_name}</p>
             <p className="text-xs text-zinc-500 mt-1">default model: <span className="font-mono">{p.default_model}</span></p>
-            <p className="text-xs text-zinc-500">api_key_ref: <code>{p.api_key_ref}</code></p>
+            {!isCliKind(p.kind) && (
+              <p className="text-xs text-zinc-500">api_key_ref: <code>{p.api_key_ref ?? '—'}</code></p>
+            )}
+            {isCliKind(p.kind) && (
+              <p className="text-xs text-zinc-500">command: <span className="font-mono">{p.command ?? DEFAULT_COMMANDS[p.kind]}</span></p>
+            )}
             {p.base_url && <p className="text-xs text-zinc-500">base_url: <span className="font-mono">{p.base_url}</span></p>}
             <div className="flex items-center gap-2 mt-3">
               <button
@@ -124,34 +151,46 @@ function ProviderForm({ initial, onCancel, onSaved, onError }: {
   const [apiKeyRef, setApiKeyRef] = useState(initial?.api_key_ref ?? DEFAULT_KEY_REFS.anthropic);
   const [defaultModel, setDefaultModel] = useState(initial?.default_model ?? DEFAULT_MODELS.anthropic);
   const [baseUrl, setBaseUrl] = useState(initial?.base_url ?? '');
+  const [command, setCommand] = useState(initial?.command ?? DEFAULT_COMMANDS[initial?.kind ?? 'anthropic']);
+  const [extraArgs, setExtraArgs] = useState((initial?.extra_args ?? []).join(' '));
   const [enabled, setEnabled] = useState(initial?.enabled ?? true);
   const [saving, setSaving] = useState(false);
+
+  const cliKind = isCliKind(kind);
 
   function handleKindChange(next: ProviderConfig['kind']) {
     setKind(next);
     if (isNew) {
       setApiKeyRef(DEFAULT_KEY_REFS[next]);
       setDefaultModel(DEFAULT_MODELS[next]);
+      setCommand(DEFAULT_COMMANDS[next]);
     }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!id || !displayName || !apiKeyRef || !defaultModel) return;
-    if (!/^[A-Z_][A-Z0-9_]*$/.test(apiKeyRef)) {
+    if (!id || !displayName || !defaultModel) return;
+    if (!cliKind && (!apiKeyRef || !/^[A-Z_][A-Z0-9_]*$/.test(apiKeyRef))) {
       onError('api_key_ref deve essere un nome di variabile d\'ambiente (lettere maiuscole, cifre, underscore).');
+      return;
+    }
+    if (cliKind && !command.trim()) {
+      onError('Per i provider CLI è obbligatorio specificare il command (path al binary).');
       return;
     }
     setSaving(true);
     onError('');
     try {
+      const argsArr = extraArgs.trim() ? extraArgs.trim().split(/\s+/) : [];
       const cfg: ProviderConfig = {
         id: id.trim(),
         kind,
         display_name: displayName.trim(),
-        api_key_ref: apiKeyRef.trim(),
         default_model: defaultModel.trim(),
         enabled,
+        ...(cliKind ? {} : { api_key_ref: apiKeyRef.trim() }),
+        ...(cliKind && command.trim() ? { command: command.trim() } : {}),
+        ...(cliKind && argsArr.length > 0 ? { extra_args: argsArr } : {}),
         ...(baseUrl.trim() ? { base_url: baseUrl.trim() } : {}),
       };
       await api.saveProvider(cfg);
@@ -185,21 +224,37 @@ function ProviderForm({ initial, onCancel, onSaved, onError }: {
         </Field>
         <Field label="Kind">
           <select value={kind} onChange={(e) => handleKindChange(e.target.value as ProviderConfig['kind'])} className="input">
-            {KINDS.map((k) => <option key={k} value={k}>{k}</option>)}
+            {KINDS.map((k) => <option key={k} value={k}>{KIND_LABELS[k]}</option>)}
           </select>
         </Field>
         <Field label="Default model">
           <input required value={defaultModel} onChange={(e) => setDefaultModel(e.target.value)}
             className="input font-mono text-sm" placeholder="es. claude-sonnet-4-6" />
         </Field>
-        <Field label="api_key_ref (env var)">
-          <input required value={apiKeyRef} onChange={(e) => setApiKeyRef(e.target.value.toUpperCase())}
-            className="input font-mono text-sm" placeholder="es. ANTHROPIC_API_KEY" />
-        </Field>
-        <Field label="Base URL (opzionale)">
-          <input type="url" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} className="input"
-            placeholder="es. https://api.anthropic.com" />
-        </Field>
+        {!cliKind && (
+          <Field label="api_key_ref (env var)">
+            <input required value={apiKeyRef} onChange={(e) => setApiKeyRef(e.target.value.toUpperCase())}
+              className="input font-mono text-sm" placeholder="es. ANTHROPIC_API_KEY" />
+          </Field>
+        )}
+        {cliKind && (
+          <Field label="Command (path al binary)">
+            <input required value={command} onChange={(e) => setCommand(e.target.value)}
+              className="input font-mono text-sm" placeholder="es. claude o /usr/local/bin/claude" />
+          </Field>
+        )}
+        {cliKind && (
+          <Field label="Extra args (opzionali, separati da spazio)">
+            <input value={extraArgs} onChange={(e) => setExtraArgs(e.target.value)}
+              className="input font-mono text-sm" placeholder="es. --model claude-sonnet-4-6" />
+          </Field>
+        )}
+        {!cliKind && (
+          <Field label="Base URL (opzionale)">
+            <input type="url" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} className="input"
+              placeholder="es. https://api.anthropic.com" />
+          </Field>
+        )}
       </div>
 
       <label className="flex items-center gap-2 text-sm text-zinc-300">
@@ -207,9 +262,16 @@ function ProviderForm({ initial, onCancel, onSaved, onError }: {
         Abilitato
       </label>
 
-      <p className="text-xs text-zinc-500 bg-zinc-950 border border-zinc-800 rounded p-2">
-        🔐 La chiave vera (es. <code>sk-ant-...</code>) NON va inserita qui. Imposta solo il nome dell'env var in <code>api_key_ref</code> e poi aggiungi il valore a <code>.env</code> + restart del servizio.
-      </p>
+      {!cliKind && (
+        <p className="text-xs text-zinc-500 bg-zinc-950 border border-zinc-800 rounded p-2">
+          🔐 La chiave vera (es. <code>sk-ant-...</code>) NON va inserita qui. Imposta solo il nome dell'env var in <code>api_key_ref</code> e poi aggiungi il valore a <code>.env</code> + restart del servizio.
+        </p>
+      )}
+      {cliKind && (
+        <p className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded p-2 leading-relaxed">
+          ⚠️ <strong>Subscription CLI.</strong> Senatum invocherà il binary in subprocess. L'auth dipende dallo stato di login del binary sul server (es. <code>claude /login</code> già eseguito da chi avvia il backend). Verifica i Termini di servizio del provider: l'uso server-side automatico di un piano consumer (Claude Pro/Max, ChatGPT Plus) potrebbe non essere autorizzato.
+        </p>
+      )}
 
       <div className="flex justify-end gap-3">
         <button type="button" onClick={onCancel} className="px-4 py-2 rounded text-zinc-300 hover:text-white">Annulla</button>
