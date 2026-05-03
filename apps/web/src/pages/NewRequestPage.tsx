@@ -54,12 +54,12 @@ export default function NewRequestPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <h1 className="font-display text-3xl text-senate-gold">New request</h1>
+      <h1 className="font-display text-2xl sm:text-3xl text-senate-gold">New request</h1>
       <p className="text-zinc-400 text-sm">
         Sottoponi una richiesta decisionale al senato. La deliberazione parte subito; potrai vederla nella lista decisioni in pochi secondi.
       </p>
 
-      <form onSubmit={handleSubmit} className="space-y-4 bg-zinc-900 border border-zinc-800 rounded-lg p-6">
+      <form onSubmit={handleSubmit} className="space-y-4 bg-zinc-900 border border-zinc-800 rounded-lg p-4 sm:p-6">
         <Field label="Titolo">
           <input
             required
@@ -70,7 +70,7 @@ export default function NewRequestPage() {
           />
         </Field>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Dominio">
             <input
               value={domain}

@@ -12,24 +12,26 @@ export default function App({ children }: PropsWithChildren) {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-zinc-800 bg-zinc-950/95 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center gap-6">
-          <Link to="/" className="flex items-center gap-2">
-            <span className="text-2xl">🏛️</span>
-            <span className="font-display text-xl font-bold text-senate-gold tracking-wider">
-              SENATUM
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+          <div className="flex items-center justify-between gap-3">
+            <Link to="/" className="flex items-center gap-2">
+              <span className="text-2xl">🏛️</span>
+              <span className="font-display text-lg sm:text-xl font-bold text-senate-gold tracking-wider">
+                SENATUM
+              </span>
+            </Link>
+            <span className="hidden md:inline text-xs text-zinc-500 sm:ml-auto sm:order-3">
+              Princeps Senatus is watching.
             </span>
-          </Link>
-          <nav className="flex items-center gap-1 ml-6">
+          </div>
+          <nav className="-mx-4 sm:mx-0 px-4 sm:px-0 flex items-center gap-1 overflow-x-auto sm:overflow-visible sm:ml-2 scrollbar-thin">
             <NavLink to="/decisions" className={navClass}>Decisions</NavLink>
             <NavLink to="/requests/new" className={navClass}>New request</NavLink>
             <NavLink to="/configuration" className={navClass}>Configuration</NavLink>
           </nav>
-          <span className="ml-auto text-xs text-zinc-500">
-            Princeps Senatus is watching.
-          </span>
         </div>
       </header>
-      <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-8">{children}</main>
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">{children}</main>
       <footer className="border-t border-zinc-800 py-4 text-center text-xs text-zinc-600">
         Senatum — open-source multi-LLM deliberation platform.
       </footer>

@@ -29,16 +29,16 @@ export default function DecisionsListPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between gap-4 flex-wrap">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl text-senate-gold">Decisions</h1>
+          <h1 className="font-display text-2xl sm:text-3xl text-senate-gold">Decisions</h1>
           <p className="text-sm text-zinc-400 mt-1">
             Tutte le deliberazioni del senato, in ordine cronologico.
           </p>
         </div>
         <Link
           to="/requests/new"
-          className="px-4 py-2 rounded-md bg-senate-gold text-zinc-950 font-semibold hover:bg-senate-gold/90 transition-colors"
+          className="self-start sm:self-auto px-4 py-2 rounded-md bg-senate-gold text-zinc-950 font-semibold hover:bg-senate-gold/90 transition-colors text-center"
         >
           + New request
         </Link>
@@ -83,13 +83,13 @@ export default function DecisionsListPage() {
               to={`/decisions/${d.decision_id}`}
               className="block bg-zinc-900 border border-zinc-800 hover:border-senate-gold/40 rounded-lg p-4 transition-colors"
             >
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <DecisionBadge value={d.decision} />
                 <RiskBadge value={d.risk_level} />
                 <span className="text-xs text-zinc-500">
                   Confidence: {(d.confidence * 100).toFixed(0)}%
                 </span>
-                <span className="text-xs text-zinc-500 ml-auto">
+                <span className="text-xs text-zinc-500 sm:ml-auto w-full sm:w-auto">
                   {new Date(d.audit.created_at).toLocaleString()}
                 </span>
               </div>

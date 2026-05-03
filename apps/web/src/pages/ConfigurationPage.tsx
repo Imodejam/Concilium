@@ -14,9 +14,9 @@ export default function ConfigurationPage() {
   }, []);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <div>
-        <h1 className="font-display text-3xl text-senate-gold">Configuration</h1>
+        <h1 className="font-display text-2xl sm:text-3xl text-senate-gold">Configuration</h1>
         <p className="text-zinc-400 text-sm mt-1">
           Senatori e provider attualmente caricati dal filesystem (`/data`). Per il MVP la modifica
           avviene a livello di file Markdown; l'editor in-app è in roadmap.
