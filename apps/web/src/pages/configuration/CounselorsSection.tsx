@@ -217,8 +217,9 @@ function CounselorForm({ providers, initial, onCancel, onSaved, onError }: {
       </label>
 
       <Field label="System prompt (Markdown)">
-        <textarea required rows={10} value={systemPrompt} onChange={(e) => setSystemPrompt(e.target.value)}
-          className="input font-mono text-sm" placeholder="You are an Architect Counselor: …" spellCheck={false} />
+        <textarea required value={systemPrompt} onChange={(e) => setSystemPrompt(e.target.value)}
+          className="prompt-editor" placeholder="You are an Architect Counselor: …" spellCheck={false} />
+        <p className="mt-1 text-[11px] text-zinc-500">Drag the bottom-right corner to resize. The full text becomes the LLM system prompt.</p>
       </Field>
 
       {role === 'praeses' && (

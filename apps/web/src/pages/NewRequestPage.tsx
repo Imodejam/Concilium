@@ -140,20 +140,6 @@ export default function NewRequestPage() {
         </div>
       </form>
 
-      <style>{`
-        .input {
-          width: 100%;
-          background: rgb(9 9 11);
-          border: 1px solid rgb(39 39 42);
-          border-radius: 6px;
-          padding: 0.5rem 0.75rem;
-          color: rgb(244 244 245);
-        }
-        .input:focus {
-          outline: none;
-          border-color: #c9a55a;
-        }
-      `}</style>
     </div>
   );
 }

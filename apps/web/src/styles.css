@@ -11,3 +11,50 @@
 body {
   font-family: ui-sans-serif, system-ui, sans-serif;
 }
+
+@layer components {
+  .input {
+    width: 100%;
+    background: rgb(9 9 11);
+    border: 1px solid rgb(39 39 42);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    color: rgb(244 244 245);
+    line-height: 1.5;
+  }
+  .input:focus {
+    outline: none;
+    border-color: #c9a55a;
+    box-shadow: 0 0 0 1px rgba(201, 165, 90, 0.4);
+  }
+  .input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* System-prompt editor: tall, monospace, vertical-resizable. */
+  .prompt-editor {
+    width: 100%;
+    min-height: 360px;
+    background: rgb(9 9 11);
+    border: 1px solid rgb(39 39 42);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    color: rgb(244 244 245);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    resize: vertical;
+    tab-size: 2;
+  }
+  .prompt-editor:focus {
+    outline: none;
+    border-color: #c9a55a;
+    box-shadow: 0 0 0 1px rgba(201, 165, 90, 0.4);
+  }
+  @media (min-width: 768px) {
+    .prompt-editor {
+      min-height: 480px;
+    }
+  }
+}
