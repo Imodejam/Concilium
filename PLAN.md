@@ -15,7 +15,7 @@ Multi-LLM deliberation platform. A decision request is dispatched to several "co
 | Validation | zod (API + storage) | single source of truth in `packages/shared` |
 | Storage MVP | filesystem `.md` (YAML frontmatter + JSON), `gray-matter` | `/data/{requests,decisions,counselors,providers,contributions,audit}` |
 | Container | docker-compose | api + web + bot, shared `/data` volume |
-| Reverse proxy | Nginx | public endpoint `<redacted-host>` |
+| Reverse proxy | Nginx | configurable public endpoint |
 | Dev runner | systemd `concilium.service` | |
 
 ## Repo layout
@@ -44,7 +44,7 @@ concilium/
 
 ### Phase 1 — Foundations
 - [x] Init monorepo + npm workspaces + base tsconfig + `.gitignore`
-- [x] Nginx `<redacted-host>` + Let's Encrypt certbot
+- [x] Nginx site + Let's Encrypt certbot
 - [x] `packages/shared`: zod schemas for Input/Output/Counselor/Provider + enum constants
 - [x] `apps/api`: Fastify skeleton, CORS, health endpoint
 
@@ -62,7 +62,7 @@ concilium/
 ### Phase 4 — Operations
 - [x] `docker-compose.yml` with multi-stage build for api/web/bot
 - [x] `concilium.service` systemd for local dev
-- [x] Smoke test: curl health, end-to-end POST /requests → decision, public access via `https://<redacted-host>/`
+- [x] Smoke test: curl health, end-to-end POST /requests → decision, public access via the deployed reverse proxy.
 
 ## Scope decisions (MVP) — non-negotiable
 - **No DB**: Markdown files only until a migration is requested.

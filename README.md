@@ -7,7 +7,6 @@
 </p>
 
 <p align="center">
-  <a href="https://<redacted-host>">Live demo</a> ·
   <a href="#quickstart">Quickstart</a> ·
   <a href="#use-cases">Use cases</a> ·
   <a href="#telegram-integration">Telegram bot</a> ·
