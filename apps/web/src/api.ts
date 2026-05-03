@@ -31,7 +31,7 @@ export const api = {
     http<StoredRequest>('/requests', { method: 'POST', body: JSON.stringify(body) }),
   listDecisions:   () => http<DecisionOutput[]>('/decisions'),
   getDecision:     (id: string) =>
-    http<{ decision: DecisionOutput; contributions: Contribution[] }>(`/decisions/${id}`),
+    http<{ decision: DecisionOutput; contributions: Contribution[]; request: StoredRequest | null }>(`/decisions/${id}`),
   listCounselors:    () => http<CounselorWithPrompt[]>('/counselors'),
   getCounselor:      (id: string) => http<CounselorWithPrompt>(`/counselors/${id}`),
   saveCounselor:     (cfg: CounselorConfig, systemPrompt: string) =>

@@ -104,8 +104,11 @@ app.get<{ Params: { id: string } }>('/decisions/:id', async (req, reply) => {
     reply.code(404).send({ error: 'Decision not found' });
     return;
   }
-  const contributions = await listContributionsForRequest(decision.request_id);
-  return { data: { decision, contributions } };
+  const [contributions, request] = await Promise.all([
+    listContributionsForRequest(decision.request_id),
+    loadRequest(decision.request_id),
+  ]);
+  return { data: { decision, contributions, request } };
 });
 
 // ── Counselors ───────────────────────────────────────────────────────────────

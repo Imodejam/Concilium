@@ -1,12 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import type { Contribution, DecisionOutput } from '@concilium/shared';
+import type { Contribution, DecisionOutput, StoredRequest } from '@concilium/shared';
 import { api } from '../api.js';
 import { DecisionBadge, RiskBadge } from '../components/badges.js';
 
+type DecisionBundle = {
+  decision: DecisionOutput;
+  contributions: Contribution[];
+  request: StoredRequest | null;
+};
+
 export default function DecisionDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<{ decision: DecisionOutput; contributions: Contribution[] } | null>(null);
+  const [data, setData] = useState<DecisionBundle | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [debugOpen, setDebugOpen] = useState(false);
 
@@ -17,7 +23,7 @@ export default function DecisionDetailPage() {
 
   if (error) return <p className="text-rose-400">Error: {error}</p>;
   if (!data) return <p className="text-zinc-500">Loading…</p>;
-  const { decision, contributions } = data;
+  const { decision, contributions, request } = data;
 
   return (
     <div className="space-y-6">
@@ -38,13 +44,15 @@ export default function DecisionDetailPage() {
             </span>
           )}
         </div>
-        <h1 className="font-display text-xl sm:text-2xl text-senate-gold">Praeses Concilii has spoken</h1>
+        <h1 className="font-display text-xl sm:text-2xl text-senate-gold">The Princeps has spoken</h1>
         <p className="text-zinc-500 text-xs sm:text-sm font-mono break-all">
           decision_id: {decision.decision_id}
           <br />request_id: {decision.request_id}
           <br />generated: {new Date(decision.audit.created_at).toLocaleString()} ({decision.audit.duration_ms} ms)
         </p>
       </header>
+
+      {request && <RequestSection request={request} />}
 
       <section className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 sm:p-6 space-y-4">
         <div>
@@ -110,5 +118,59 @@ export default function DecisionDetailPage() {
         <pre className="mt-2 overflow-x-auto text-zinc-300 whitespace-pre">{JSON.stringify(decision, null, 2)}</pre>
       </details>
     </div>
+  );
+}
+
+function RequestSection({ request }: { request: StoredRequest }) {
+  const hasPayload = Object.keys(request.payload ?? {}).length > 0;
+  return (
+    <section className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 sm:p-6 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-xs uppercase tracking-widest text-zinc-500">Original request</h2>
+        <div className="flex flex-wrap gap-1 text-[10px] uppercase">
+          <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">{request.intent}</span>
+          <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">{request.domain}</span>
+          <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">{request.source}</span>
+        </div>
+      </div>
+
+      <p className="text-zinc-100 font-medium leading-snug break-words">{request.title}</p>
+
+      {request.context && (
+        <div>
+          <p className="text-[11px] uppercase tracking-wide text-zinc-500 mb-1">Context</p>
+          <p className="text-sm text-zinc-300 whitespace-pre-line break-words">{request.context}</p>
+        </div>
+      )}
+
+      {request.constraints.length > 0 && (
+        <div>
+          <p className="text-[11px] uppercase tracking-wide text-zinc-500 mb-1">Constraints</p>
+          <ul className="text-sm text-zinc-300 list-disc list-inside space-y-0.5">
+            {request.constraints.map((c, i) => <li key={i}>{c}</li>)}
+          </ul>
+        </div>
+      )}
+
+      {hasPayload && (
+        <div>
+          <p className="text-[11px] uppercase tracking-wide text-zinc-500 mb-1">Payload</p>
+          <pre className="text-xs text-zinc-300 bg-zinc-950 border border-zinc-800 rounded p-3 overflow-x-auto whitespace-pre">
+            {JSON.stringify(request.payload, null, 2)}
+          </pre>
+        </div>
+      )}
+
+      <details className="text-xs">
+        <summary className="cursor-pointer text-zinc-500 hover:text-zinc-200">Raw request JSON</summary>
+        <pre className="mt-2 overflow-x-auto text-zinc-300 bg-zinc-950 border border-zinc-800 rounded p-3 whitespace-pre">
+          {JSON.stringify(request, null, 2)}
+        </pre>
+      </details>
+
+      <p className="text-[11px] text-zinc-500">
+        Submitted by <span className="text-zinc-400">{request.actor.type}/{request.actor.id}</span> · {new Date(request.created_at).toLocaleString()}
+      </p>
+    </section>
   );
 }
