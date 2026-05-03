@@ -1,0 +1,19 @@
+node_modules/
+dist/
+build/
+*.log
+.env
+.env.local
+.DS_Store
+.vite/
+coverage/
+*.tsbuildinfo
+
+# Local data — don't commit per-instance state
+/data/requests/*.md
+/data/decisions/*.md
+/data/contributions/*.md
+/data/audit/*.md
+# But DO commit the seed senators/providers
+!/data/senators/*.md
+!/data/providers/*.md

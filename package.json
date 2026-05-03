@@ -1,0 +1,21 @@
+{
+  "name": "senatum",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build:shared": "npm run build --workspace=@senatum/shared",
+    "dev": "concurrently -n api,web,bot \"npm run dev --workspace=@senatum/api\" \"npm run dev --workspace=@senatum/web\" \"npm run dev --workspace=@senatum/bot\"",
+    "dev:api": "npm run dev --workspace=@senatum/api",
+    "dev:web": "npm run dev --workspace=@senatum/web",
+    "dev:bot": "npm run dev --workspace=@senatum/bot",
+    "type-check": "tsc -b"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0",
+    "typescript": "^5.6.0"
+  }
+}
