@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import type { Intent } from '@concilium/shared';
+import { Link, useNavigate } from 'react-router-dom';
+import type { Intent, StoredRequest } from '@concilium/shared';
 import { api } from '../api.js';
 
 const INTENTS: Intent[] = ['validate', 'decide', 'review', 'compare', 'approve', 'diagnose'];
@@ -15,6 +15,7 @@ export default function NewRequestPage() {
   const [constraints, setConstraints] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState<StoredRequest | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,7 +45,7 @@ export default function NewRequestPage() {
           allowed_decisions: ['APPROVED', 'REJECTED', 'APPROVED_WITH_CONDITIONS', 'NEEDS_MORE_INFO'],
         },
       });
-      navigate(`/decisions?just_submitted=${stored.request_id}`);
+      setSubmitted(stored);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -52,11 +53,60 @@ export default function NewRequestPage() {
     }
   }
 
+  if (submitted) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <h1 className="font-display text-2xl sm:text-3xl text-senate-gold">Request submitted ✓</h1>
+
+        <section className="bg-emerald-500/5 border border-emerald-500/30 rounded-lg p-4 sm:p-6 space-y-4">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl leading-none">🏛️</span>
+            <div className="space-y-1">
+              <p className="text-zinc-100 font-medium">The council is convened.</p>
+              <p className="text-sm text-zinc-400">
+                Deliberation has started. The Praeses is selecting which counselors to invoke; you can watch their contributions arrive in real time.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-zinc-950 border border-zinc-800 rounded p-3 text-xs">
+            <p className="text-zinc-500 uppercase tracking-wide text-[10px] mb-1">Request ID</p>
+            <p className="font-mono text-zinc-200 break-all">{submitted.request_id}</p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              to={`/requests/${submitted.request_id}/live`}
+              className="px-5 py-2 rounded bg-senate-gold text-zinc-950 font-semibold hover:bg-senate-gold/90"
+            >
+              Watch live deliberation →
+            </Link>
+            <Link to="/decisions" className="text-sm text-zinc-400 hover:text-zinc-100">
+              Back to all decisions
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                setSubmitted(null);
+                setTitle(''); setDomain(''); setContext('');
+                setPayloadText('{}'); setConstraints('');
+                setIntent('decide');
+              }}
+              className="text-sm text-zinc-400 hover:text-zinc-100 sm:ml-auto"
+            >
+              Submit another request
+            </button>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <h1 className="font-display text-2xl sm:text-3xl text-senate-gold">New request</h1>
       <p className="text-zinc-400 text-sm">
-        Submit a decision request to the council. Deliberation starts immediately; you'll see the result in the decisions list within a few seconds.
+        Submit a decision request to the council. Deliberation starts immediately; you'll watch the contributions arrive in real time.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4 bg-zinc-900 border border-zinc-800 rounded-lg p-4 sm:p-6">
@@ -139,7 +189,6 @@ export default function NewRequestPage() {
           </button>
         </div>
       </form>
-
     </div>
   );
 }

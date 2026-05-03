@@ -203,3 +203,26 @@ export async function appendAudit(event: AuditEvent): Promise<void> {
   const chunk = '\n```json\n' + JSON.stringify(event) + '\n```\n';
   await appendMd(file, chunk);
 }
+
+/**
+ * Stream-friendly read of all audit events tagged with the given request_id,
+ * across all daily files. Returned in chronological order.
+ */
+export async function listAuditEventsForRequest(requestId: string): Promise<AuditEvent[]> {
+  const files = await listMd(paths.audit);
+  const out: AuditEvent[] = [];
+  for (const f of files) {
+    const raw = await (await import('node:fs')).promises.readFile(f, 'utf8');
+    const blockRe = /```json\s*\n([\s\S]*?)\n```/g;
+    let m: RegExpExecArray | null;
+    while ((m = blockRe.exec(raw)) !== null) {
+      try {
+        const parsed = JSON.parse(m[1]!) as AuditEvent;
+        if (parsed.request_id === requestId) out.push(parsed);
+      } catch {
+        // skip malformed block
+      }
+    }
+  }
+  return out.sort((a, b) => a.ts.localeCompare(b.ts));
+}

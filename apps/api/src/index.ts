@@ -23,6 +23,7 @@ import {
   saveProvider,
   deleteProvider,
   listContributionsForRequest,
+  listAuditEventsForRequest,
   appendAudit,
 } from './storage/repos.js';
 import { runDeliberation } from './orchestrator/deliberate.js';
@@ -90,6 +91,16 @@ app.get<{ Params: { id: string } }>('/requests/:id', async (req, reply) => {
     return;
   }
   return { data: stored };
+});
+
+app.get<{ Params: { id: string } }>('/requests/:id/contributions', async (req) => {
+  const data = await listContributionsForRequest(req.params.id);
+  return { data };
+});
+
+app.get<{ Params: { id: string } }>('/requests/:id/audit', async (req) => {
+  const data = await listAuditEventsForRequest(req.params.id);
+  return { data };
 });
 
 // ── Decisions ──────────────────────────────────────────────────────────────

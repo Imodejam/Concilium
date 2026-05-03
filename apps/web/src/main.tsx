@@ -6,6 +6,7 @@ import DecisionsListPage from './pages/DecisionsListPage.js';
 import DecisionDetailPage from './pages/DecisionDetailPage.js';
 import NewRequestPage from './pages/NewRequestPage.js';
 import ConfigurationPage from './pages/ConfigurationPage.js';
+import LiveDeliberationPage from './pages/LiveDeliberationPage.js';
 import './styles.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -17,6 +18,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="/decisions" element={<DecisionsListPage />} />
           <Route path="/decisions/:id" element={<DecisionDetailPage />} />
           <Route path="/requests/new" element={<NewRequestPage />} />
+          <Route path="/requests/:id/live" element={<LiveDeliberationPage />} />
           <Route path="/configuration" element={<ConfigurationPage />} />
         </Routes>
       </App>

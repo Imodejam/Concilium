@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { DecisionOutput, DecisionValue } from '@concilium/shared';
+import type { DecisionOutput, DecisionValue, StoredRequest } from '@concilium/shared';
 import { api } from '../api.js';
 import { DecisionBadge, RiskBadge } from '../components/badges.js';
 
@@ -12,13 +12,36 @@ const ALL_FILTERS: ('ALL' | DecisionValue)[] = [
   'NEEDS_MORE_INFO',
 ];
 
+const LIVE_REFRESH_MS = 4000;
+
 export default function DecisionsListPage() {
   const [decisions, setDecisions] = useState<DecisionOutput[] | null>(null);
+  const [liveRequests, setLiveRequests] = useState<StoredRequest[]>([]);
   const [filter, setFilter] = useState<'ALL' | DecisionValue>('ALL');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     api.listDecisions().then(setDecisions).catch((e) => setError(e.message));
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timer: number | undefined;
+    const refreshLive = async () => {
+      try {
+        const all = await api.listRequests();
+        if (cancelled) return;
+        setLiveRequests(all.filter((r) => r.status === 'PENDING' || r.status === 'IN_PROGRESS'));
+      } catch (err) {
+        if (!cancelled) setError((err as Error).message);
+      }
+      if (!cancelled) timer = window.setTimeout(refreshLive, LIVE_REFRESH_MS);
+    };
+    void refreshLive();
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
   }, []);
 
   const filtered = useMemo(() => {
@@ -43,6 +66,40 @@ export default function DecisionsListPage() {
           + New request
         </Link>
       </div>
+
+      {liveRequests.length > 0 && (
+        <section className="space-y-2">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xs uppercase tracking-widest text-zinc-500">Live deliberations</h2>
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            <span className="text-xs text-zinc-500">{liveRequests.length} in progress</span>
+          </div>
+          <ul className="space-y-2">
+            {liveRequests.map((r) => (
+              <li key={r.request_id}>
+                <Link
+                  to={`/requests/${r.request_id}/live`}
+                  className="block bg-amber-500/5 border border-amber-500/30 hover:border-amber-500/60 rounded-lg p-4 transition-colors"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                      {r.status}
+                    </span>
+                    <span className="text-xs text-zinc-500">{r.intent} · {r.domain}</span>
+                    <span className="text-xs text-zinc-500 sm:ml-auto">
+                      Submitted {new Date(r.created_at).toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-zinc-100 font-medium line-clamp-2">{r.title}</p>
+                  <p className="mt-1 text-[11px] text-zinc-500 font-mono truncate">
+                    request_id: {r.request_id}
+                  </p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="flex flex-wrap gap-2">
         {ALL_FILTERS.map((f) => (
@@ -70,7 +127,7 @@ export default function DecisionsListPage() {
         </div>
       )}
 
-      {decisions && filtered.length === 0 && (
+      {decisions && filtered.length === 0 && liveRequests.length === 0 && (
         <div className="text-center py-16 text-zinc-500 border border-dashed border-zinc-800 rounded-lg">
           No decisions to show. Create the first request.
         </div>

@@ -5,6 +5,7 @@ import type {
   CounselorConfig,
   ProviderConfig,
   RequestInput,
+  AuditEvent,
 } from '@concilium/shared';
 
 export type CounselorWithPrompt = CounselorConfig & { systemPrompt: string };
@@ -27,6 +28,8 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   listRequests:    () => http<StoredRequest[]>('/requests'),
   getRequest:      (id: string) => http<StoredRequest>(`/requests/${id}`),
+  getRequestContributions: (id: string) => http<Contribution[]>(`/requests/${id}/contributions`),
+  getRequestAudit: (id: string) => http<AuditEvent[]>(`/requests/${id}/audit`),
   createRequest:   (body: RequestInput) =>
     http<StoredRequest>('/requests', { method: 'POST', body: JSON.stringify(body) }),
   listDecisions:   () => http<DecisionOutput[]>('/decisions'),
