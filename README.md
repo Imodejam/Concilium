@@ -2,7 +2,7 @@
 
 > Multi-LLM deliberation platform — a council of AIs decides, a Synthesizer speaks once.
 
-Concilium lets humans (and other AI agents) submit decisional requests to a configurable council of LLMs with distinct roles (Architect, Security, Product, Cost, UX, Critic, …). Each counselor issues a structured opinion in parallel; a final **Synthesizer** ("Praeses Concilii") produces **one** decision with motivation, confidence, risk level, conditions and suggested actions.
+Concilium lets humans (and other AI agents) submit decisional requests to a configurable council of LLMs with distinct roles (Architect, Security, Product, Cost, UX, Critic, …). A **Praeses Concilii** orchestrates the deliberation across rounds; a separate **Princeps** (Synthesizer) reads the contributions plus the Praeses' conflict report and produces **one** decision with motivation, confidence, risk level, conditions and suggested actions.
 
 It is **not** a multi-agent chat. It is a deterministic decision-making layer with a uniform, machine-readable output suitable for both humans and downstream automation.
 
@@ -12,7 +12,7 @@ Input → Praeses (orchestrator) ⇄ Counselors (parallel, multi-round) → Synt
 
 **Two distinct roles, separated on purpose:**
 - **Praeses Concilii** — the orchestrator. Each round it decides which counselors to invoke, applies policies (security, cost, PII coverage, escalation, termination), and at the end produces a conflict report summarising convergence and divergence. It does **not** decide.
-- **Synthesizer** ("Princeps") — the decider. Reads the contributions plus the Praeses conflict report and produces the single final decision. It does **not** orchestrate.
+- **Princeps** (Synthesizer role) — the decider. Reads the contributions plus the Praeses conflict report and produces the single final decision. It does **not** orchestrate, never picks who is heard, never enforces policy.
 
 Why split: separating *governance of the discussion* from the *act of deciding* lets you swap either independently, run multi-round deliberations with adaptive escalation, and inject policies without touching the decision logic.
 
