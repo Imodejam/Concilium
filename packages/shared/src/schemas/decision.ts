@@ -10,7 +10,7 @@ export type AuditMeta = z.infer<typeof AuditMetaSchema>;
 
 /**
  * Universal output shape — produced by the Synthesizer once for every
- * request. Always one decision: no ties, no per-senator votes leak through.
+ * request. Always one decision: no ties, no per-counselor votes leak through.
  */
 export const DecisionOutputSchema = z.object({
   request_id: z.string().uuid(),

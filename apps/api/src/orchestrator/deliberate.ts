@@ -4,24 +4,24 @@ import {
   ContributionSchema,
   type DecisionOutput,
   DecisionOutputSchema,
-  SenatorOutputSchema,
+  CounselorOutputSchema,
   type StoredRequest,
-} from '@senatum/shared';
+} from '@concilium/shared';
 import { config } from '../config.js';
 import {
   appendAudit,
-  listSenators,
+  listCounselors,
   saveContribution,
   saveDecision,
   saveRequest,
-  type SenatorRecord,
+  type CounselorRecord,
 } from '../storage/repos.js';
 import { getProvider, withRetry } from '../llm/registry.js';
 import {
-  SENATOR_JSON_HINT,
+  COUNSELOR_JSON_HINT,
   SYNTHESIZER_JSON_HINT,
   SYNTHESIZER_SYSTEM_PROMPT,
-  buildSenatorUserPrompt,
+  buildCounselorUserPrompt,
   buildSynthesizerUserPrompt,
 } from './prompts.js';
 
@@ -33,9 +33,9 @@ function parseJson(text: string): unknown {
   return JSON.parse(body);
 }
 
-async function callSenator(
+async function callCounselor(
   req: StoredRequest,
-  rec: SenatorRecord,
+  rec: CounselorRecord,
 ): Promise<Contribution> {
   const start = Date.now();
   const provider = await getProvider(rec.config.provider_id);
@@ -44,17 +44,17 @@ async function callSenator(
       provider.call({
         model: rec.config.model,
         systemPrompt: rec.systemPrompt,
-        userPrompt: buildSenatorUserPrompt(req),
-        jsonHint: SENATOR_JSON_HINT,
+        userPrompt: buildCounselorUserPrompt(req),
+        jsonHint: COUNSELOR_JSON_HINT,
         timeoutMs: config.llm.timeoutMs,
       }),
     config.llm.retries,
   );
-  const parsed = SenatorOutputSchema.parse(parseJson(result.rawText));
+  const parsed = CounselorOutputSchema.parse(parseJson(result.rawText));
   const contribution: Contribution = {
     request_id: req.request_id,
-    senator_id: rec.config.id,
-    senator_role: rec.config.role,
+    counselor_id: rec.config.id,
+    counselor_role: rec.config.role,
     model: result.modelUsed,
     output: parsed,
     created_at: new Date().toISOString(),
@@ -66,19 +66,19 @@ async function callSenator(
 
 export async function runDeliberation(req: StoredRequest): Promise<void> {
   const startedAt = Date.now();
-  const allSenators = await listSenators();
-  const synthesizer = allSenators.find(
+  const allCounselors = await listCounselors();
+  const synthesizer = allCounselors.find(
     (s) => s.config.role === 'synthesizer' && s.config.enabled,
   );
   if (!synthesizer) {
-    await markFailed(req, 'No enabled Synthesizer senator configured');
+    await markFailed(req, 'No enabled Synthesizer counselor configured');
     return;
   }
-  const reviewers = allSenators.filter(
+  const reviewers = allCounselors.filter(
     (s) => s.config.role !== 'synthesizer' && s.config.enabled,
   );
   if (reviewers.length === 0) {
-    await markFailed(req, 'No reviewer senators configured');
+    await markFailed(req, 'No reviewer counselors configured');
     return;
   }
 
@@ -89,26 +89,26 @@ export async function runDeliberation(req: StoredRequest): Promise<void> {
   });
 
   const contributions: Contribution[] = [];
-  const failures: { senator_id: string; error: string }[] = [];
+  const failures: { counselor_id: string; error: string }[] = [];
 
   await Promise.all(
     reviewers.map(async (rec) => {
       await appendAudit({
         ts: new Date().toISOString(),
-        kind: 'senator.invoked',
+        kind: 'counselor.invoked',
         request_id: req.request_id,
-        senator_id: rec.config.id,
+        counselor_id: rec.config.id,
         details: { role: rec.config.role, model: rec.config.model },
       });
       try {
-        const contrib = await callSenator(req, rec);
+        const contrib = await callCounselor(req, rec);
         await saveContribution(contrib);
         contributions.push(contrib);
         await appendAudit({
           ts: new Date().toISOString(),
-          kind: 'senator.responded',
+          kind: 'counselor.responded',
           request_id: req.request_id,
-          senator_id: rec.config.id,
+          counselor_id: rec.config.id,
           details: {
             recommendation: contrib.output.recommendation,
             risk_level: contrib.output.risk_level,
@@ -117,12 +117,12 @@ export async function runDeliberation(req: StoredRequest): Promise<void> {
         });
       } catch (err) {
         const message = (err as Error).message ?? String(err);
-        failures.push({ senator_id: rec.config.id, error: message });
+        failures.push({ counselor_id: rec.config.id, error: message });
         await appendAudit({
           ts: new Date().toISOString(),
-          kind: 'senator.failed',
+          kind: 'counselor.failed',
           request_id: req.request_id,
-          senator_id: rec.config.id,
+          counselor_id: rec.config.id,
           details: { error: message },
         });
       }
@@ -132,7 +132,7 @@ export async function runDeliberation(req: StoredRequest): Promise<void> {
   if (contributions.length === 0) {
     await markFailed(
       req,
-      `All senators failed: ${failures.map((f) => `${f.senator_id}=${f.error}`).join('; ')}`,
+      `All counselors failed: ${failures.map((f) => `${f.counselor_id}=${f.error}`).join('; ')}`,
     );
     return;
   }
@@ -142,7 +142,7 @@ export async function runDeliberation(req: StoredRequest): Promise<void> {
     ts: new Date().toISOString(),
     kind: 'synthesizer.invoked',
     request_id: req.request_id,
-    senator_id: synthesizer.config.id,
+    counselor_id: synthesizer.config.id,
     details: {
       model: synthesizer.config.model,
       contribution_count: contributions.length,

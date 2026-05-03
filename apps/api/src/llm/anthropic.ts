@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { type ProviderConfig } from '@senatum/shared';
+import { type ProviderConfig } from '@concilium/shared';
 import { LlmError, type LlmCallOptions, type LlmProvider, type LlmResult } from './types.js';
 
 export class AnthropicProvider implements LlmProvider {
@@ -18,7 +18,7 @@ export class AnthropicProvider implements LlmProvider {
   async call(opts: LlmCallOptions): Promise<LlmResult> {
     const timeoutMs = opts.timeoutMs ?? 60_000;
     const userMsg = opts.jsonHint
-      ? `${opts.userPrompt}\n\n---\nRispondi ESCLUSIVAMENTE con un blocco JSON valido secondo questo schema:\n${opts.jsonHint}\n\nNiente testo prima o dopo il JSON. Niente catene di pensiero.`
+      ? `${opts.userPrompt}\n\n---\nReply EXCLUSIVELY with a valid JSON block matching this schema:\n${opts.jsonHint}\n\nNo text before or after the JSON. No chain of thought.`
       : opts.userPrompt;
 
     const ac = new AbortController();

@@ -1,109 +1,106 @@
-# Senatum — Implementation Plan (MVP)
+# Concilium — Implementation Plan (MVP)
 
 _Owner: claudebot — last updated 2026-05-03_
 
 ## Vision (one-liner)
-Piattaforma di deliberazione multi-LLM. Una richiesta decisionale viene inviata a più "senatori" (LLM con ruolo) in parallelo; un **Synthesizer** (Princeps Senatus) produce sempre una decisione finale unica con motivazione, confidenza, livello di rischio.
+Multi-LLM deliberation platform. A decision request is dispatched in parallel to several "counselors" (LLMs with a role); a **Synthesizer** (Praeses Concilii) always produces one final decision with motivation, confidence and risk level.
 
-## Source of truth della spec
-[`/home/progetti/obsidian-vault/raw/docs/senatum-mvp-spec_2026-05-03.md`](../obsidian-vault/raw/docs/senatum-mvp-spec_2026-05-03.md) — immutabile.
-
-## Stack scelto
-| Layer | Tech | Note |
+## Stack
+| Layer | Tech | Notes |
 |---|---|---|
-| Backend | Node 20 + TypeScript + Fastify | leggero, OpenAPI nativo, validazione zod-ts |
-| Frontend | React 18 + TypeScript + Vite + TailwindCSS | coerente con Piratopoly |
-| Bot | telegraf 4 | pattern noto, allowlist via env |
-| LLM | `@anthropic-ai/sdk` (Claude Sonnet) | default; skeleton OpenAI per fallback |
-| Validation | zod (sia API che storage) | schemi unici in `packages/shared` |
-| Storage MVP | filesystem `.md` (frontmatter YAML + JSON), `gray-matter` | `/data/{requests,decisions,senators,providers,contributions,audit}` |
-| Container | docker-compose | api+web+bot, volume `/data` condiviso |
-| Reverse proxy | Nginx | endpoint pubblico `<redacted-host>` |
-| Dev runner | systemd `senatum.service` | analogo a `piratopoly.service` |
+| Backend | Node 20 + TypeScript + Fastify | lightweight, native OpenAPI, zod-ts validation |
+| Frontend | React 18 + TypeScript + Vite + TailwindCSS | |
+| Bot | telegraf 4 | well-known pattern, env-based allowlist |
+| LLM | `@anthropic-ai/sdk` (Claude Sonnet) | default; OpenAI / CLI providers pluggable |
+| Validation | zod (API + storage) | single source of truth in `packages/shared` |
+| Storage MVP | filesystem `.md` (YAML frontmatter + JSON), `gray-matter` | `/data/{requests,decisions,counselors,providers,contributions,audit}` |
+| Container | docker-compose | api + web + bot, shared `/data` volume |
+| Reverse proxy | Nginx | public endpoint `<redacted-host>` |
+| Dev runner | systemd `concilium.service` | |
 
-## Layout repo
+## Repo layout
 ```
-senatum/
+concilium/
 ├── apps/
 │   ├── api/          # Fastify backend
 │   ├── web/          # React + Vite frontend
 │   └── bot/          # Telegram bot (telegraf)
 ├── packages/
-│   └── shared/       # tipi + zod schemi + costanti
-├── data/             # storage Markdown (volume in Docker)
-├── docker/           # Dockerfile per api/web/bot
+│   └── shared/       # types + zod schemas + constants
+├── data/             # Markdown storage (Docker volume)
+├── docker/           # Dockerfiles for api/web/bot
 ├── docker-compose.yml
 ├── package.json      # workspaces
 └── PLAN.md
 ```
 
-## Porte dev
+## Dev ports
 - API: `7001` (HTTP, JSON)
 - Web (Vite): `7002`
-- Bot: nessuna porta HTTP (long-poll Telegram)
+- Bot: no HTTP port (Telegram long-poll)
 - Nginx: 443 → 7002 (web), `/api` → 7001
 
-## Roadmap (sequenza)
+## Roadmap
 
-### Fase 1 — Foundations
-- [ ] **Init monorepo** + npm workspaces + tsconfig base + `.gitignore`
-- [ ] **Nginx** `<redacted-host>` + certbot Let's Encrypt
-- [ ] `packages/shared`: schemi zod per Input/Output/Senator/Provider + costanti enum
-- [ ] `apps/api`: skeleton Fastify, CORS, health endpoint
+### Phase 1 — Foundations
+- [x] Init monorepo + npm workspaces + base tsconfig + `.gitignore`
+- [x] Nginx `<redacted-host>` + Let's Encrypt certbot
+- [x] `packages/shared`: zod schemas for Input/Output/Counselor/Provider + enum constants
+- [x] `apps/api`: Fastify skeleton, CORS, health endpoint
 
-### Fase 2 — Core domain
-- [ ] **Storage filesystem** in `apps/api/src/storage/`: read/write `.md` con `gray-matter`
-- [ ] **LLM provider** abstraction `apps/api/src/llm/` con Anthropic adapter (retry+timeout, no CoT)
-- [ ] **Orchestrator** `apps/api/src/orchestrator/`: senatori in parallelo → contributi → Synthesizer → decisione → audit
-- [ ] **Senatori default** in `data/senators/` (Architect, Security, Product, Cost, UX, Critic, Synthesizer)
-- [ ] **Endpoints API**: `POST /requests`, `GET /requests`, `GET /requests/:id`, `GET /decisions`, `GET /decisions/:id`, `GET/POST /senators`, `GET/POST /providers`
+### Phase 2 — Core domain
+- [x] Filesystem **storage** in `apps/api/src/storage/`: read/write `.md` with `gray-matter`
+- [x] **LLM provider** abstraction `apps/api/src/llm/` with Anthropic adapter (retry + timeout, no CoT)
+- [x] **Orchestrator** `apps/api/src/orchestrator/`: parallel counselors → contributions → Synthesizer → decision → audit
+- [x] **Default counselors** in `data/counselors/` (Architect, Security, Product, Cost, UX, Critic, Synthesizer)
+- [x] **API endpoints**: `POST /requests`, `GET /requests`, `GET /requests/:id`, `GET /decisions`, `GET /decisions/:id`, `GET/POST /counselors`, `GET/POST /providers`
 
-### Fase 3 — Surfaces
-- [ ] `apps/web`: layout shell + 4 pagine (`/decisions`, `/decisions/:id`, `/requests/new`, `/configuration`)
-- [ ] `apps/bot`: comandi `/new`, `/status`, `/decision`, `/debug` con allowlist
+### Phase 3 — Surfaces
+- [x] `apps/web`: layout shell + 4 pages (`/decisions`, `/decisions/:id`, `/requests/new`, `/configuration`)
+- [x] `apps/bot`: `/new`, `/status`, `/decision`, `/debug` commands with allowlist
 
-### Fase 4 — Operations
-- [ ] `docker-compose.yml` con build multi-stage per api/web/bot
-- [ ] `senatum.service` systemd per dev locale
-- [ ] Smoke test: curl health, end-to-end POST /requests → decisione, accesso da `https://<redacted-host>/`
+### Phase 4 — Operations
+- [x] `docker-compose.yml` with multi-stage build for api/web/bot
+- [x] `concilium.service` systemd for local dev
+- [x] Smoke test: curl health, end-to-end POST /requests → decision, public access via `https://<redacted-host>/`
 
-## Decisioni di scope (MVP) — non negoziabili
-- **No DB**: solo file Markdown finché Stefano non chiederà la migrazione.
-- **No auth utenti**: API protetta con bearer token statico (env `API_TOKEN`); bot Telegram limitato ad allowlist user_id.
-- **No code-runner**: i senatori producono **solo** JSON strutturato.
-- **No CoT salvato**: dopo `JSON.parse` del response, scartare il testo grezzo.
-- **Senatori in parallelo** (non sequenziale): più veloce, costo accettabile a 5-7 senatori.
-- **Provider default Anthropic Claude Sonnet** (eccellente reasoning, prompt caching nativo).
+## Scope decisions (MVP) — non-negotiable
+- **No DB**: Markdown files only until a migration is requested.
+- **No user auth**: API protected by a static bearer token (env `API_TOKEN`); the Telegram bot is restricted by user_id allowlist.
+- **No code-runner**: counselors produce **only** structured JSON.
+- **No CoT stored**: after `JSON.parse`-ing the response, raw text is discarded.
+- **Counselors run in parallel** (not sequential): faster, cost remains acceptable at 5–7 counselors.
+- **Default provider Anthropic Claude Sonnet** (excellent reasoning, native prompt caching).
 
-## Fuori scope MVP (TODO futuri)
-- Versioning richieste / decisioni
-- Migrazione storage SQL/Postgres
-- Multi-tenant (più organizzazioni)
-- WebSocket per stream contributi in tempo reale (per ora polling)
-- MCP server per esporre Senatum agli agenti AI come tool
-- Integrazione email/Slack
-- UI in lingue diverse da italiano
+## Out of scope (future TODOs)
+- Versioning of requests / decisions
+- Migration to SQL / Postgres storage
+- Multi-tenant (several organisations)
+- WebSocket for live streaming of contributions (currently polling)
+- MCP server to expose Concilium to AI agents as a tool
+- Email / Slack integrations
+- UI localisation
 
-## Schemi chiave (definiti in `packages/shared`)
+## Key schemas (defined in `packages/shared`)
 
-### Input universale
-Vedi `packages/shared/src/schemas/request.ts` (zod).
+### Universal input
+See `packages/shared/src/schemas/request.ts` (zod).
 
-### Output universale
-Vedi `packages/shared/src/schemas/decision.ts` (zod).
+### Universal output
+See `packages/shared/src/schemas/decision.ts` (zod).
 
-### Senator config
-`/data/senators/{id}.md`: frontmatter con `id`, `role`, `model`, `provider`, `api_key_ref`, `weight` (informativo, non usato dal Synthesizer per la media); body Markdown con system prompt.
+### Counselor config
+`/data/counselors/{id}.md`: frontmatter with `id`, `role`, `model`, `provider_id`, `weight` (informational, not used by the Synthesizer for averaging); body Markdown is the system prompt.
 
 ### Provider config
-`/data/providers/{id}.md`: frontmatter con `id`, `kind` (anthropic|openai), `api_key_ref`, `default_model`.
+`/data/providers/{id}.md`: frontmatter with `id`, `kind` (anthropic | openai | claude-code | openai-codex), `api_key_ref`, `default_model`.
 
-## Convenzioni
-- Tutti i file `.md` in `/data/` hanno frontmatter YAML + body con sezioni Markdown + uno o più blocchi ` ```json ` per il payload strutturato.
-- Audit append-only: `data/audit/YYYY-MM-DD.md` con una entry per evento.
-- Naming UUID per `request_id` e `decision_id`.
+## Conventions
+- All `.md` files under `/data/` use a YAML frontmatter + a Markdown body with sections + one or more ` ```json ` blocks for the structured payload.
+- Audit is append-only: `data/audit/YYYY-MM-DD.md` with one entry per event.
+- UUID naming for `request_id` and `decision_id`.
 
-## Rischi noti
-- Costo LLM in fase di test: 5-7 senatori × ogni richiesta. Cap: usare Claude Haiku per i senatori "leggeri" (Cost, UX) e Sonnet per critici (Security, Synthesizer).
-- Prompt injection nel `payload` della richiesta: i senatori devono trattare il payload come dato non fidato. Già coperto dal prompt di sistema.
-- File concorrenti su `/data`: bassissimo rischio in MVP single-instance, ma usare `flock` se passiamo a multi-istanza.
+## Known risks
+- LLM cost during testing: 5–7 counselors × every request. Cap: use Claude Haiku for "lightweight" counselors (Cost, UX) and Sonnet for critical ones (Security, Synthesizer).
+- Prompt injection in the request `payload`: counselors must treat the payload as untrusted data. Already covered by the system prompt.
+- Concurrent file writes on `/data`: extremely low risk on a single MVP instance, but use `flock` if we move to multi-instance.

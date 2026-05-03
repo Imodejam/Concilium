@@ -1,4 +1,4 @@
-import { type ProviderConfig, isCliProviderKind } from '@senatum/shared';
+import { type ProviderConfig, isCliProviderKind } from '@concilium/shared';
 import { listProviders } from '../storage/repos.js';
 import { AnthropicProvider } from './anthropic.js';
 import { CliProvider } from './cli.js';

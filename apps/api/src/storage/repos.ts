@@ -4,14 +4,14 @@ import {
   StoredRequestSchema,
   type DecisionOutput,
   DecisionOutputSchema,
-  type SenatorConfig,
-  SenatorConfigSchema,
+  type CounselorConfig,
+  CounselorConfigSchema,
   type ProviderConfig,
   ProviderConfigSchema,
   type Contribution,
   ContributionSchema,
   type AuditEvent,
-} from '@senatum/shared';
+} from '@concilium/shared';
 import { paths } from './paths.js';
 import { appendMd, extractJsonBlock, listMd, readMd, writeMd } from './markdown.js';
 
@@ -86,37 +86,37 @@ export async function listDecisions(): Promise<DecisionOutput[]> {
   return out.sort((a, b) => b.audit.created_at.localeCompare(a.audit.created_at));
 }
 
-// ── Senators ───────────────────────────────────────────────────────────────
+// ── Counselors ───────────────────────────────────────────────────────────────
 
-export interface SenatorRecord {
-  config: SenatorConfig;
+export interface CounselorRecord {
+  config: CounselorConfig;
   systemPrompt: string;
 }
 
-export async function listSenators(): Promise<SenatorRecord[]> {
-  const files = await listMd(paths.senators);
-  const out: SenatorRecord[] = [];
+export async function listCounselors(): Promise<CounselorRecord[]> {
+  const files = await listMd(paths.counselors);
+  const out: CounselorRecord[] = [];
   for (const f of files) {
     const doc = await readMd(f);
     if (!doc) continue;
-    const parsed = SenatorConfigSchema.safeParse(doc.data);
+    const parsed = CounselorConfigSchema.safeParse(doc.data);
     if (parsed.success) out.push({ config: parsed.data, systemPrompt: doc.body.trim() });
   }
   return out;
 }
 
-export async function loadSenator(senatorId: string): Promise<SenatorRecord | null> {
-  const all = await listSenators();
-  return all.find((s) => s.config.id === senatorId) ?? null;
+export async function loadCounselor(counselorId: string): Promise<CounselorRecord | null> {
+  const all = await listCounselors();
+  return all.find((s) => s.config.id === counselorId) ?? null;
 }
 
-export async function saveSenator(record: SenatorRecord): Promise<void> {
-  const file = path.join(paths.senators, `${record.config.id}.md`);
+export async function saveCounselor(record: CounselorRecord): Promise<void> {
+  const file = path.join(paths.counselors, `${record.config.id}.md`);
   await writeMd(file, record.config as unknown as Record<string, unknown>, record.systemPrompt + '\n');
 }
 
-export async function deleteSenator(senatorId: string): Promise<boolean> {
-  const file = path.join(paths.senators, `${senatorId}.md`);
+export async function deleteCounselor(counselorId: string): Promise<boolean> {
+  const file = path.join(paths.counselors, `${counselorId}.md`);
   try {
     await (await import('node:fs')).promises.unlink(file);
     return true;
@@ -149,8 +149,8 @@ export async function saveProvider(provider: ProviderConfig): Promise<void> {
   const file = path.join(paths.providers, `${provider.id}.md`);
   const isCli = provider.kind === 'claude-code' || provider.kind === 'openai-codex';
   const auth = isCli
-    ? `Subprocess CLI \`${provider.command ?? provider.kind}\` — auth gestita dal login del binary sul server.`
-    : `La chiave API è risolta a runtime dalla variabile d'ambiente \`${provider.api_key_ref}\`.`;
+    ? `Subprocess CLI \`${provider.command ?? provider.kind}\` — auth handled by the binary's own login state on the server.`
+    : `The API key is resolved at runtime from the env var \`${provider.api_key_ref}\`.`;
   const body = `# Provider: ${provider.display_name}\n\nKind: \`${provider.kind}\`. Model default: \`${provider.default_model}\`. ${auth}\n`;
   await writeMd(file, provider as unknown as Record<string, unknown>, body);
 }
@@ -169,14 +169,14 @@ export async function deleteProvider(providerId: string): Promise<boolean> {
 // ── Contributions ──────────────────────────────────────────────────────────
 
 export async function saveContribution(c: Contribution): Promise<void> {
-  const file = path.join(paths.contributions, `${c.request_id}__${c.senator_id}.md`);
+  const file = path.join(paths.contributions, `${c.request_id}__${c.counselor_id}.md`);
   const body =
-    `# ${c.senator_role.toUpperCase()} (${c.senator_id})\n\n${c.output.summary}\n\n` +
+    `# ${c.counselor_role.toUpperCase()} (${c.counselor_id})\n\n${c.output.summary}\n\n` +
     '## Output\n\n```json\n' + JSON.stringify(c, null, 2) + '\n```\n';
   await writeMd(file, {
     request_id: c.request_id,
-    senator_id: c.senator_id,
-    role: c.senator_role,
+    counselor_id: c.counselor_id,
+    role: c.counselor_role,
     recommendation: c.output.recommendation,
   }, body);
 }

@@ -56,7 +56,7 @@ export type ExpectedOutput = z.infer<typeof ExpectedOutputSchema>;
 /**
  * Universal input shape — all incoming requests (API / Telegram / MCP) are
  * normalised to this schema before being persisted and dispatched to the
- * senate.
+ * council.
  */
 export const RequestInputSchema = z.object({
   request_id: z.string().uuid().optional(), // server-assigned if missing

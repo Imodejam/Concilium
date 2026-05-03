@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: docker/api.Dockerfile
-    image: senatum-api:dev
+    image: concilium-api:dev
     env_file: .env
     environment:
       DATA_DIR: /data
@@ -19,7 +19,7 @@ services:
     build:
       context: .
       dockerfile: docker/web.Dockerfile
-    image: senatum-web:dev
+    image: concilium-web:dev
     environment:
       VITE_API_URL: ${VITE_API_URL:-http://api:7001}
     ports:
@@ -32,10 +32,10 @@ services:
     build:
       context: .
       dockerfile: docker/bot.Dockerfile
-    image: senatum-bot:dev
+    image: concilium-bot:dev
     env_file: .env
     environment:
-      SENATUM_API_URL: http://api:7001
+      CONCILIUM_API_URL: http://api:7001
     depends_on:
       - api
     restart: unless-stopped

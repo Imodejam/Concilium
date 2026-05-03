@@ -1,4 +1,4 @@
-import { type ProviderConfig } from '@senatum/shared';
+import { type ProviderConfig } from '@concilium/shared';
 
 export interface LlmCallOptions {
   model: string;

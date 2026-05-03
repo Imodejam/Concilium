@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { DecisionOutput, DecisionValue } from '@senatum/shared';
+import type { DecisionOutput, DecisionValue } from '@concilium/shared';
 import { api } from '../api.js';
 import { DecisionBadge, RiskBadge } from '../components/badges.js';
 
@@ -33,7 +33,7 @@ export default function DecisionsListPage() {
         <div>
           <h1 className="font-display text-2xl sm:text-3xl text-senate-gold">Decisions</h1>
           <p className="text-sm text-zinc-400 mt-1">
-            Tutte le deliberazioni del senato, in ordine cronologico.
+            All council deliberations, in chronological order.
           </p>
         </div>
         <Link
@@ -60,7 +60,7 @@ export default function DecisionsListPage() {
         ))}
       </div>
 
-      {error && <p className="text-rose-400 text-sm">Errore: {error}</p>}
+      {error && <p className="text-rose-400 text-sm">Error: {error}</p>}
 
       {decisions === null && !error && (
         <div className="space-y-2">
@@ -72,7 +72,7 @@ export default function DecisionsListPage() {
 
       {decisions && filtered.length === 0 && (
         <div className="text-center py-16 text-zinc-500 border border-dashed border-zinc-800 rounded-lg">
-          Nessuna decisione da mostrare. Crea la prima richiesta.
+          No decisions to show. Create the first request.
         </div>
       )}
 

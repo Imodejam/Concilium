@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { ProviderConfig } from '@senatum/shared';
+import type { ProviderConfig } from '@concilium/shared';
 import { api } from '../../api.js';
 import { Field } from './formField.js';
 
@@ -60,7 +60,7 @@ export default function ProvidersSection({ setError }: Props) {
   }, []);
 
   async function handleDelete(id: string) {
-    if (!window.confirm(`Eliminare il provider "${id}"? L'azione è permanente.`)) return;
+    if (!window.confirm(`Delete provider "${id}"? This action is permanent.`)) return;
     setError(null);
     try {
       await api.deleteProvider(id);
@@ -92,7 +92,7 @@ export default function ProvidersSection({ setError }: Props) {
           onClick={() => setEdit({ kind: 'new' })}
           className="px-3 py-1.5 rounded bg-senate-gold text-zinc-950 text-sm font-semibold hover:bg-senate-gold/90"
         >
-          + Nuovo provider
+          + New provider
         </button>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -119,20 +119,20 @@ export default function ProvidersSection({ setError }: Props) {
                 onClick={() => setEdit({ kind: 'edit', original: p })}
                 className="px-3 py-1 rounded text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-100"
               >
-                Modifica
+                Edit
               </button>
               <button
                 onClick={() => handleDelete(p.id)}
                 className="px-3 py-1 rounded text-xs font-medium bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500/20"
               >
-                Elimina
+                Delete
               </button>
             </div>
           </div>
         ))}
       </div>
       <p className="text-xs text-zinc-500 mt-4">
-        Le chiavi API NON vengono salvate qui: <code>api_key_ref</code> è il nome della variabile d'ambiente che il backend leggerà a runtime. Aggiungila al file <code>.env</code> e fai restart del servizio.
+        API keys are NOT stored here: <code>api_key_ref</code> is the name of the environment variable the backend will read at runtime. Add it to your <code>.env</code> file and restart the service.
       </p>
     </section>
   );
@@ -171,11 +171,11 @@ function ProviderForm({ initial, onCancel, onSaved, onError }: {
     e.preventDefault();
     if (!id || !displayName || !defaultModel) return;
     if (!cliKind && (!apiKeyRef || !/^[A-Z_][A-Z0-9_]*$/.test(apiKeyRef))) {
-      onError('api_key_ref deve essere un nome di variabile d\'ambiente (lettere maiuscole, cifre, underscore).');
+      onError('api_key_ref must be an environment variable name (uppercase letters, digits, underscore).');
       return;
     }
     if (cliKind && !command.trim()) {
-      onError('Per i provider CLI è obbligatorio specificare il command (path al binary).');
+      onError('CLI providers require a command (path to the binary).');
       return;
     }
     setSaving(true);
@@ -206,21 +206,21 @@ function ProviderForm({ initial, onCancel, onSaved, onError }: {
     <form onSubmit={handleSubmit} className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 sm:p-6 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="font-display text-xl text-senate-gold">
-          {isNew ? 'Nuovo provider' : `Modifica ${initial.id}`}
+          {isNew ? 'New provider' : `Edit ${initial.id}`}
         </h2>
         <button type="button" onClick={onCancel} className="text-zinc-400 hover:text-zinc-100 text-sm">
-          ← Indietro
+          ← Back
         </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="ID (univoco)">
+        <Field label="ID (unique)">
           <input required disabled={!isNew} pattern="[a-zA-Z0-9_-]+" value={id} onChange={(e) => setId(e.target.value)}
-            className="input" placeholder="es. anthropic-prod" />
+            className="input" placeholder="e.g. anthropic-prod" />
         </Field>
         <Field label="Display name">
           <input required value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="input"
-            placeholder="es. Anthropic (production)" />
+            placeholder="e.g. Anthropic (production)" />
         </Field>
         <Field label="Kind">
           <select value={kind} onChange={(e) => handleKindChange(e.target.value as ProviderConfig['kind'])} className="input">
@@ -229,55 +229,55 @@ function ProviderForm({ initial, onCancel, onSaved, onError }: {
         </Field>
         <Field label="Default model">
           <input required value={defaultModel} onChange={(e) => setDefaultModel(e.target.value)}
-            className="input font-mono text-sm" placeholder="es. claude-sonnet-4-6" />
+            className="input font-mono text-sm" placeholder="e.g. claude-sonnet-4-6" />
         </Field>
         {!cliKind && (
           <Field label="api_key_ref (env var)">
             <input required value={apiKeyRef} onChange={(e) => setApiKeyRef(e.target.value.toUpperCase())}
-              className="input font-mono text-sm" placeholder="es. ANTHROPIC_API_KEY" />
+              className="input font-mono text-sm" placeholder="e.g. ANTHROPIC_API_KEY" />
           </Field>
         )}
         {cliKind && (
-          <Field label="Command (path al binary)">
+          <Field label="Command (path to binary)">
             <input required value={command} onChange={(e) => setCommand(e.target.value)}
-              className="input font-mono text-sm" placeholder="es. claude o /usr/local/bin/claude" />
+              className="input font-mono text-sm" placeholder="e.g. claude or /usr/local/bin/claude" />
           </Field>
         )}
         {cliKind && (
-          <Field label="Extra args (opzionali, separati da spazio)">
+          <Field label="Extra args (optional, space-separated)">
             <input value={extraArgs} onChange={(e) => setExtraArgs(e.target.value)}
-              className="input font-mono text-sm" placeholder="es. --model claude-sonnet-4-6" />
+              className="input font-mono text-sm" placeholder="e.g. --model claude-sonnet-4-6" />
           </Field>
         )}
         {!cliKind && (
-          <Field label="Base URL (opzionale)">
+          <Field label="Base URL (optional)">
             <input type="url" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} className="input"
-              placeholder="es. https://api.anthropic.com" />
+              placeholder="e.g. https://api.anthropic.com" />
           </Field>
         )}
       </div>
 
       <label className="flex items-center gap-2 text-sm text-zinc-300">
         <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="rounded" />
-        Abilitato
+        Enabled
       </label>
 
       {!cliKind && (
         <p className="text-xs text-zinc-500 bg-zinc-950 border border-zinc-800 rounded p-2">
-          🔐 La chiave vera (es. <code>sk-ant-...</code>) NON va inserita qui. Imposta solo il nome dell'env var in <code>api_key_ref</code> e poi aggiungi il valore a <code>.env</code> + restart del servizio.
+          🔐 The actual key (e.g. <code>sk-ant-...</code>) must NOT be entered here. Set only the env var name in <code>api_key_ref</code>, then add the value to <code>.env</code> and restart the service.
         </p>
       )}
       {cliKind && (
         <p className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded p-2 leading-relaxed">
-          ⚠️ <strong>Subscription CLI.</strong> Senatum invocherà il binary in subprocess. L'auth dipende dallo stato di login del binary sul server (es. <code>claude /login</code> già eseguito da chi avvia il backend). Verifica i Termini di servizio del provider: l'uso server-side automatico di un piano consumer (Claude Pro/Max, ChatGPT Plus) potrebbe non essere autorizzato.
+          ⚠️ <strong>Subscription CLI.</strong> Concilium will invoke the binary as a subprocess. Auth depends on the binary's login state on the server (e.g. <code>claude /login</code> already run by whoever starts the backend). Check the provider's Terms of Service: automated server-side use of a consumer plan (Claude Pro/Max, ChatGPT Plus) may not be allowed.
         </p>
       )}
 
       <div className="flex justify-end gap-3">
-        <button type="button" onClick={onCancel} className="px-4 py-2 rounded text-zinc-300 hover:text-white">Annulla</button>
+        <button type="button" onClick={onCancel} className="px-4 py-2 rounded text-zinc-300 hover:text-white">Cancel</button>
         <button type="submit" disabled={saving}
           className="px-5 py-2 rounded bg-senate-gold text-zinc-950 font-semibold hover:bg-senate-gold/90 disabled:opacity-50">
-          {saving ? 'Salvataggio…' : isNew ? 'Crea provider' : 'Salva modifiche'}
+          {saving ? 'Saving…' : isNew ? 'Create provider' : 'Save changes'}
         </button>
       </div>
     </form>

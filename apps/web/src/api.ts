@@ -2,12 +2,12 @@ import type {
   StoredRequest,
   DecisionOutput,
   Contribution,
-  SenatorConfig,
+  CounselorConfig,
   ProviderConfig,
   RequestInput,
-} from '@senatum/shared';
+} from '@concilium/shared';
 
-export type SenatorWithPrompt = SenatorConfig & { systemPrompt: string };
+export type CounselorWithPrompt = CounselorConfig & { systemPrompt: string };
 
 const BASE = (import.meta.env.VITE_API_URL ?? '/api').replace(/\/$/, '');
 
@@ -32,15 +32,15 @@ export const api = {
   listDecisions:   () => http<DecisionOutput[]>('/decisions'),
   getDecision:     (id: string) =>
     http<{ decision: DecisionOutput; contributions: Contribution[] }>(`/decisions/${id}`),
-  listSenators:    () => http<SenatorWithPrompt[]>('/senators'),
-  getSenator:      (id: string) => http<SenatorWithPrompt>(`/senators/${id}`),
-  saveSenator:     (cfg: SenatorConfig, systemPrompt: string) =>
-    http<SenatorConfig>('/senators', {
+  listCounselors:    () => http<CounselorWithPrompt[]>('/counselors'),
+  getCounselor:      (id: string) => http<CounselorWithPrompt>(`/counselors/${id}`),
+  saveCounselor:     (cfg: CounselorConfig, systemPrompt: string) =>
+    http<CounselorConfig>('/counselors', {
       method: 'POST',
       body: JSON.stringify({ config: cfg, systemPrompt }),
     }),
-  deleteSenator:   async (id: string) => {
-    const res = await fetch(`${BASE}/senators/${id}`, { method: 'DELETE' });
+  deleteCounselor:   async (id: string) => {
+    const res = await fetch(`${BASE}/counselors/${id}`, { method: 'DELETE' });
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);

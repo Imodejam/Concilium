@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { type ProviderConfig } from '@senatum/shared';
+import { type ProviderConfig } from '@concilium/shared';
 import { LlmError, type LlmCallOptions, type LlmProvider, type LlmResult } from './types.js';
 
 /**
@@ -9,7 +9,7 @@ import { LlmError, type LlmCallOptions, type LlmProvider, type LlmResult } from 
  *
  * NOTE: most consumer subscriptions (Claude Pro/Max, ChatGPT Plus/Pro) are
  * intended for personal interactive use; running them server-side is a
- * grey area for the provider's ToS. Senatum makes the integration
+ * grey area for the provider's ToS. Concilium makes the integration
  * available; the operator is responsible for compliant use.
  */
 export class CliProvider implements LlmProvider {
@@ -34,7 +34,7 @@ export class CliProvider implements LlmProvider {
       opts.systemPrompt,
       opts.userPrompt,
       opts.jsonHint
-        ? `\n---\nRispondi ESCLUSIVAMENTE con un blocco JSON valido secondo questo schema:\n${opts.jsonHint}\n\nNiente testo prima o dopo il JSON. Niente catene di pensiero.`
+        ? `\n---\nReply EXCLUSIVELY with a valid JSON block matching this schema:\n${opts.jsonHint}\n\nNo text before or after the JSON. No chain of thought.`
         : '',
     ].filter(Boolean).join('\n\n');
 

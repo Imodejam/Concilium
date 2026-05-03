@@ -1,4 +1,4 @@
-import type { DecisionValue, RequestStatus, RiskLevel } from '@senatum/shared';
+import type { DecisionValue, RequestStatus, RiskLevel } from '@concilium/shared';
 
 const decisionStyles: Record<DecisionValue, string> = {
   APPROVED: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',

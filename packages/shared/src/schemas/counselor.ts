@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const SenatorRoleSchema = z.enum([
+export const CounselorRoleSchema = z.enum([
   'architect',
   'security',
   'product',
@@ -10,28 +10,28 @@ export const SenatorRoleSchema = z.enum([
   'critic',
   'synthesizer',
 ]);
-export type SenatorRole = z.infer<typeof SenatorRoleSchema>;
+export type CounselorRole = z.infer<typeof CounselorRoleSchema>;
 
 /**
- * Senator config (frontmatter of /data/senators/{id}.md).
+ * Counselor config (frontmatter of /data/counselors/{id}.md).
  * The body of the .md is the system prompt used at deliberation time.
  */
-export const SenatorConfigSchema = z.object({
+export const CounselorConfigSchema = z.object({
   id: z.string().min(1),
-  role: SenatorRoleSchema,
+  role: CounselorRoleSchema,
   display_name: z.string().min(1),
   provider_id: z.string().min(1),       // refers to /data/providers/{id}.md
   model: z.string().min(1),             // e.g. "claude-sonnet-4-6"
   weight: z.number().positive().default(1.0), // informative; Synthesizer doesn't average
   enabled: z.boolean().default(true),
 });
-export type SenatorConfig = z.infer<typeof SenatorConfigSchema>;
+export type CounselorConfig = z.infer<typeof CounselorConfigSchema>;
 
 /**
- * What a senator returns once it has reviewed a request. Strict schema:
+ * What a counselor returns once it has reviewed a request. Strict schema:
  * no chain-of-thought, just structured judgment.
  */
-export const SenatorOutputSchema = z.object({
+export const CounselorOutputSchema = z.object({
   recommendation: z.enum([
     'APPROVED',
     'REJECTED',
@@ -44,4 +44,4 @@ export const SenatorOutputSchema = z.object({
   confidence: z.number().min(0).max(1),
   risk_level: z.enum(['LOW', 'MEDIUM', 'HIGH']),
 });
-export type SenatorOutput = z.infer<typeof SenatorOutputSchema>;
+export type CounselorOutput = z.infer<typeof CounselorOutputSchema>;

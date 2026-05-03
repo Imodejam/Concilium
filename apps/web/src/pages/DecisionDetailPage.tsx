@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import type { Contribution, DecisionOutput } from '@senatum/shared';
+import type { Contribution, DecisionOutput } from '@concilium/shared';
 import { api } from '../api.js';
 import { DecisionBadge, RiskBadge } from '../components/badges.js';
 
@@ -15,14 +15,14 @@ export default function DecisionDetailPage() {
     api.getDecision(id).then(setData).catch((e) => setError(e.message));
   }, [id]);
 
-  if (error) return <p className="text-rose-400">Errore: {error}</p>;
-  if (!data) return <p className="text-zinc-500">Caricamento…</p>;
+  if (error) return <p className="text-rose-400">Error: {error}</p>;
+  if (!data) return <p className="text-zinc-500">Loading…</p>;
   const { decision, contributions } = data;
 
   return (
     <div className="space-y-6">
       <Link to="/decisions" className="text-sm text-zinc-500 hover:text-zinc-200">
-        ← Torna alle decisioni
+        ← Back to decisions
       </Link>
 
       <header className="space-y-3">
@@ -38,7 +38,7 @@ export default function DecisionDetailPage() {
             </span>
           )}
         </div>
-        <h1 className="font-display text-xl sm:text-2xl text-senate-gold">Princeps Senatus has spoken</h1>
+        <h1 className="font-display text-xl sm:text-2xl text-senate-gold">Praeses Concilii has spoken</h1>
         <p className="text-zinc-500 text-xs sm:text-sm font-mono break-all">
           decision_id: {decision.decision_id}
           <br />request_id: {decision.request_id}
@@ -76,16 +76,16 @@ export default function DecisionDetailPage() {
           onClick={() => setDebugOpen((v) => !v)}
           className="w-full text-left px-4 py-3 flex items-center justify-between text-sm text-zinc-400 hover:text-zinc-100"
         >
-          <span>🔍 Debug — contributions from senators ({contributions.length})</span>
+          <span>🔍 Debug — contributions from counselors ({contributions.length})</span>
           <span className="text-xs">{debugOpen ? '▼' : '►'}</span>
         </button>
         {debugOpen && (
           <div className="px-4 pb-4 space-y-3">
             {contributions.map((c) => (
-              <div key={c.senator_id} className="bg-zinc-950 border border-zinc-800 rounded p-3">
+              <div key={c.counselor_id} className="bg-zinc-950 border border-zinc-800 rounded p-3">
                 <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <span className="font-mono text-senate-gold">{c.senator_id}</span>
-                  <span className="px-2 py-0.5 rounded bg-zinc-800 uppercase tracking-wide">{c.senator_role}</span>
+                  <span className="font-mono text-senate-gold">{c.counselor_id}</span>
+                  <span className="px-2 py-0.5 rounded bg-zinc-800 uppercase tracking-wide">{c.counselor_role}</span>
                   <span className="text-zinc-500">→ {c.output.recommendation}</span>
                   <span className="text-zinc-500">({(c.output.confidence * 100).toFixed(0)}%)</span>
                   <span className="text-zinc-500 sm:ml-auto">{c.duration_ms} ms</span>

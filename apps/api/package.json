@@ -1,5 +1,5 @@
 {
-  "name": "@senatum/api",
+  "name": "@concilium/api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -13,7 +13,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.0",
     "@fastify/cors": "^10.0.0",
-    "@senatum/shared": "*",
+    "@concilium/shared": "*",
     "dotenv": "^16.4.5",
     "fastify": "^5.0.0",
     "gray-matter": "^4.0.3",

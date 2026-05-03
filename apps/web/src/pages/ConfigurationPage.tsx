@@ -1,18 +1,18 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import SenatorsSection from './configuration/SenatorsSection.js';
+import CounselorsSection from './configuration/CounselorsSection.js';
 import ProvidersSection from './configuration/ProvidersSection.js';
 
-type Tab = 'senators' | 'providers';
+type Tab = 'counselors' | 'providers';
 
 const TAB_LABELS: Record<Tab, string> = {
-  senators: 'Senators',
+  counselors: 'Counselors',
   providers: 'Providers',
 };
 
 export default function ConfigurationPage() {
   const [params, setParams] = useSearchParams();
-  const tab: Tab = params.get('tab') === 'providers' ? 'providers' : 'senators';
+  const tab: Tab = params.get('tab') === 'providers' ? 'providers' : 'counselors';
   const [error, setError] = useState<string | null>(null);
 
   function selectTab(next: Tab) {
@@ -25,12 +25,12 @@ export default function ConfigurationPage() {
       <div>
         <h1 className="font-display text-2xl sm:text-3xl text-senate-gold">Configuration</h1>
         <p className="text-zinc-400 text-sm mt-1">
-          Senatori e provider del senato. Tutto persistito come file Markdown sotto <code className="text-xs">data/</code>.
+          Council counselors and providers. Everything persisted as Markdown files under <code className="text-xs">data/</code>.
         </p>
       </div>
 
       <div className="border-b border-zinc-800 flex gap-1">
-        {(['senators', 'providers'] as Tab[]).map((t) => (
+        {(['counselors', 'providers'] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => selectTab(t)}
@@ -49,7 +49,7 @@ export default function ConfigurationPage() {
         <p className="text-rose-400 text-sm bg-rose-500/10 border border-rose-500/30 rounded p-3">{error}</p>
       )}
 
-      {tab === 'senators' && <SenatorsSection setError={setError} />}
+      {tab === 'counselors' && <CounselorsSection setError={setError} />}
       {tab === 'providers' && <ProvidersSection setError={setError} />}
     </div>
   );

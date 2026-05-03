@@ -1,5 +1,5 @@
 {
-  "name": "senatum",
+  "name": "concilium",
   "version": "0.1.0",
   "private": true,
   "workspaces": [
@@ -7,11 +7,11 @@
     "apps/*"
   ],
   "scripts": {
-    "build:shared": "npm run build --workspace=@senatum/shared",
-    "dev": "concurrently -n api,web,bot \"npm run dev --workspace=@senatum/api\" \"npm run dev --workspace=@senatum/web\" \"npm run dev --workspace=@senatum/bot\"",
-    "dev:api": "npm run dev --workspace=@senatum/api",
-    "dev:web": "npm run dev --workspace=@senatum/web",
-    "dev:bot": "npm run dev --workspace=@senatum/bot",
+    "build:shared": "npm run build --workspace=@concilium/shared",
+    "dev": "concurrently -n api,web,bot \"npm run dev --workspace=@concilium/api\" \"npm run dev --workspace=@concilium/web\" \"npm run dev --workspace=@concilium/bot\"",
+    "dev:api": "npm run dev --workspace=@concilium/api",
+    "dev:web": "npm run dev --workspace=@concilium/web",
+    "dev:bot": "npm run dev --workspace=@concilium/bot",
     "type-check": "tsc -b"
   },
   "devDependencies": {

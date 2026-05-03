@@ -17,11 +17,11 @@ export default function App({ children }: PropsWithChildren) {
             <Link to="/" className="flex items-center gap-2">
               <span className="text-2xl">🏛️</span>
               <span className="font-display text-lg sm:text-xl font-bold text-senate-gold tracking-wider">
-                SENATUM
+                CONCILIUM
               </span>
             </Link>
             <span className="hidden md:inline text-xs text-zinc-500 sm:ml-auto sm:order-3">
-              Princeps Senatus is watching.
+              Praeses Concilii is watching.
             </span>
           </div>
           <nav className="-mx-4 sm:mx-0 px-4 sm:px-0 flex items-center gap-1 overflow-x-auto sm:overflow-visible sm:ml-2 scrollbar-thin">
@@ -33,7 +33,7 @@ export default function App({ children }: PropsWithChildren) {
       </header>
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">{children}</main>
       <footer className="border-t border-zinc-800 py-4 text-center text-xs text-zinc-600">
-        Senatum — open-source multi-LLM deliberation platform.
+        Concilium — open-source multi-LLM deliberation platform.
       </footer>
     </div>
   );

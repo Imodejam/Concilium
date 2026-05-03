@@ -1,5 +1,5 @@
 {
-  "name": "@senatum/bot",
+  "name": "@concilium/bot",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     "type-check": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@senatum/shared": "*",
+    "@concilium/shared": "*",
     "dotenv": "^16.4.5",
     "telegraf": "^4.16.0"
   },

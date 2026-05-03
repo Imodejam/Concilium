@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import type { ProviderConfig, SenatorConfig } from '@senatum/shared';
-import { api, type SenatorWithPrompt } from '../../api.js';
+import type { ProviderConfig, CounselorConfig } from '@concilium/shared';
+import { api, type CounselorWithPrompt } from '../../api.js';
 import { Field } from './formField.js';
 
-const ROLES: SenatorConfig['role'][] = [
+const ROLES: CounselorConfig['role'][] = [
   'architect',
   'security',
   'product',
@@ -17,20 +17,20 @@ const ROLES: SenatorConfig['role'][] = [
 type EditState =
   | { kind: 'closed' }
   | { kind: 'new' }
-  | { kind: 'edit'; original: SenatorWithPrompt };
+  | { kind: 'edit'; original: CounselorWithPrompt };
 
 interface Props {
   setError: (msg: string | null) => void;
 }
 
-export default function SenatorsSection({ setError }: Props) {
-  const [senators, setSenators] = useState<SenatorWithPrompt[]>([]);
+export default function CounselorsSection({ setError }: Props) {
+  const [counselors, setCounselors] = useState<CounselorWithPrompt[]>([]);
   const [providers, setProviders] = useState<ProviderConfig[]>([]);
   const [edit, setEdit] = useState<EditState>({ kind: 'closed' });
 
   async function refresh() {
-    const [s, p] = await Promise.all([api.listSenators(), api.listProviders()]);
-    setSenators(s);
+    const [s, p] = await Promise.all([api.listCounselors(), api.listProviders()]);
+    setCounselors(s);
     setProviders(p);
   }
 
@@ -39,10 +39,10 @@ export default function SenatorsSection({ setError }: Props) {
   }, []);
 
   async function handleDelete(id: string) {
-    if (!window.confirm(`Eliminare il senatore "${id}"? L'azione è permanente.`)) return;
+    if (!window.confirm(`Delete counselor "${id}"? This action is permanent.`)) return;
     setError(null);
     try {
-      await api.deleteSenator(id);
+      await api.deleteCounselor(id);
       await refresh();
     } catch (e) {
       setError((e as Error).message);
@@ -51,7 +51,7 @@ export default function SenatorsSection({ setError }: Props) {
 
   if (edit.kind !== 'closed') {
     return (
-      <SenatorForm
+      <CounselorForm
         providers={providers}
         initial={edit.kind === 'edit' ? edit.original : null}
         onCancel={() => setEdit({ kind: 'closed' })}
@@ -67,16 +67,16 @@ export default function SenatorsSection({ setError }: Props) {
   return (
     <section>
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <h2 className="text-lg font-semibold text-zinc-200">Senators ({senators.length})</h2>
+        <h2 className="text-lg font-semibold text-zinc-200">Counselors ({counselors.length})</h2>
         <button
           onClick={() => setEdit({ kind: 'new' })}
           className="px-3 py-1.5 rounded bg-senate-gold text-zinc-950 text-sm font-semibold hover:bg-senate-gold/90"
         >
-          + Nuovo senatore
+          + New counselor
         </button>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        {senators.map((s) => (
+        {counselors.map((s) => (
           <div key={s.id} className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 flex flex-col">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <p className="font-mono text-senate-gold">{s.id}</p>
@@ -95,13 +95,13 @@ export default function SenatorsSection({ setError }: Props) {
                 onClick={() => setEdit({ kind: 'edit', original: s })}
                 className="px-3 py-1 rounded text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-100"
               >
-                Modifica
+                Edit
               </button>
               <button
                 onClick={() => handleDelete(s.id)}
                 className="px-3 py-1 rounded text-xs font-medium bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500/20"
               >
-                Elimina
+                Delete
               </button>
             </div>
           </div>
@@ -111,16 +111,16 @@ export default function SenatorsSection({ setError }: Props) {
   );
 }
 
-function SenatorForm({ providers, initial, onCancel, onSaved, onError }: {
+function CounselorForm({ providers, initial, onCancel, onSaved, onError }: {
   providers: ProviderConfig[];
-  initial: SenatorWithPrompt | null;
+  initial: CounselorWithPrompt | null;
   onCancel: () => void;
   onSaved: () => void | Promise<void>;
   onError: (msg: string) => void;
 }) {
   const isNew = initial === null;
   const [id, setId] = useState(initial?.id ?? '');
-  const [role, setRole] = useState<SenatorConfig['role']>(initial?.role ?? 'architect');
+  const [role, setRole] = useState<CounselorConfig['role']>(initial?.role ?? 'architect');
   const [displayName, setDisplayName] = useState(initial?.display_name ?? '');
   const [providerId, setProviderId] = useState(initial?.provider_id ?? (providers[0]?.id ?? ''));
   const [model, setModel] = useState(
@@ -139,7 +139,7 @@ function SenatorForm({ providers, initial, onCancel, onSaved, onError }: {
     setSaving(true);
     onError('');
     try {
-      await api.saveSenator(
+      await api.saveCounselor(
         {
           id: id.trim(),
           role,
@@ -163,24 +163,24 @@ function SenatorForm({ providers, initial, onCancel, onSaved, onError }: {
     <form onSubmit={handleSubmit} className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 sm:p-6 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="font-display text-xl text-senate-gold">
-          {isNew ? 'Nuovo senatore' : `Modifica ${initial.id}`}
+          {isNew ? 'New counselor' : `Edit ${initial.id}`}
         </h2>
         <button type="button" onClick={onCancel} className="text-zinc-400 hover:text-zinc-100 text-sm">
-          ← Indietro
+          ← Back
         </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="ID (univoco, no spazi)">
+        <Field label="ID (unique, no spaces)">
           <input required disabled={!isNew} pattern="[a-zA-Z0-9_-]+" value={id} onChange={(e) => setId(e.target.value)}
-            className="input" placeholder="es. legal-eu" />
+            className="input" placeholder="e.g. legal-eu" />
         </Field>
         <Field label="Display name">
           <input required value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="input"
-            placeholder="es. Legal (EU)" />
+            placeholder="e.g. Legal (EU)" />
         </Field>
-        <Field label="Ruolo">
-          <select value={role} onChange={(e) => setRole(e.target.value as SenatorConfig['role'])} className="input">
+        <Field label="Role">
+          <select value={role} onChange={(e) => setRole(e.target.value as CounselorConfig['role'])} className="input">
             {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
         </Field>
@@ -199,9 +199,9 @@ function SenatorForm({ providers, initial, onCancel, onSaved, onError }: {
         </Field>
         <Field label="Model">
           <input required value={model} onChange={(e) => setModel(e.target.value)}
-            className="input font-mono text-sm" placeholder="es. claude-sonnet-4-6" />
+            className="input font-mono text-sm" placeholder="e.g. claude-sonnet-4-6" />
         </Field>
-        <Field label="Weight (informativo)">
+        <Field label="Weight (informational)">
           <input type="number" step="0.1" min="0" value={weight}
             onChange={(e) => setWeight(parseFloat(e.target.value) || 0)} className="input" />
         </Field>
@@ -209,25 +209,25 @@ function SenatorForm({ providers, initial, onCancel, onSaved, onError }: {
 
       <label className="flex items-center gap-2 text-sm text-zinc-300">
         <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="rounded" />
-        Abilitato (verrà incluso nelle deliberazioni)
+        Enabled (will be included in deliberations)
       </label>
 
       <Field label="System prompt (Markdown)">
         <textarea required rows={10} value={systemPrompt} onChange={(e) => setSystemPrompt(e.target.value)}
-          className="input font-mono text-sm" placeholder="Sei un Architect Senator: …" spellCheck={false} />
+          className="input font-mono text-sm" placeholder="You are an Architect Counselor: …" spellCheck={false} />
       </Field>
 
       {role === 'synthesizer' && (
         <p className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded p-2">
-          ⚠️ I senatori col ruolo Synthesizer producono la decisione finale. Ne serve almeno uno abilitato perché il senato possa deliberare.
+          ⚠️ Synthesizer counselors produce the final decision. At least one must be enabled for the council to deliberate.
         </p>
       )}
 
       <div className="flex justify-end gap-3">
-        <button type="button" onClick={onCancel} className="px-4 py-2 rounded text-zinc-300 hover:text-white">Annulla</button>
+        <button type="button" onClick={onCancel} className="px-4 py-2 rounded text-zinc-300 hover:text-white">Cancel</button>
         <button type="submit" disabled={saving}
           className="px-5 py-2 rounded bg-senate-gold text-zinc-950 font-semibold hover:bg-senate-gold/90 disabled:opacity-50">
-          {saving ? 'Salvataggio…' : isNew ? 'Crea senatore' : 'Salva modifiche'}
+          {saving ? 'Saving…' : isNew ? 'Create counselor' : 'Save changes'}
         </button>
       </div>
     </form>
