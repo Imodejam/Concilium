@@ -7,8 +7,14 @@ Concilium lets humans (and other AI agents) submit decisional requests to a conf
 It is **not** a multi-agent chat. It is a deterministic decision-making layer with a uniform, machine-readable output suitable for both humans and downstream automation.
 
 ```
-Input → Deliberation (parallel counselors) → Synthesizer → Decision
+Input → Praeses (orchestrator) ⇄ Counselors (parallel, multi-round) → Synthesizer → Decision
 ```
+
+**Two distinct roles, separated on purpose:**
+- **Praeses Concilii** — the orchestrator. Each round it decides which counselors to invoke, applies policies (security, cost, PII coverage, escalation, termination), and at the end produces a conflict report summarising convergence and divergence. It does **not** decide.
+- **Synthesizer** ("Princeps") — the decider. Reads the contributions plus the Praeses conflict report and produces the single final decision. It does **not** orchestrate.
+
+Why split: separating *governance of the discussion* from the *act of deciding* lets you swap either independently, run multi-round deliberations with adaptive escalation, and inject policies without touching the decision logic.
 
 ## Features
 
@@ -129,6 +135,14 @@ The frontmatter is the wiring; the body is the system prompt. Drop the file, res
 - Honours request constraints and `allowed_decisions`.
 - May choose `NEEDS_MORE_INFO` only when the request is genuinely under-specified.
 - Sets `requires_human_confirmation = true` when irreversibility or HIGH risk is involved.
+
+## Praeses rules (non-negotiable)
+
+- Picks the smallest fitting subset of counselors per round; doesn't invoke everyone "just in case".
+- Applies security / PII / cost / coverage / escalation policies expressed in natural language in its system prompt.
+- May `ABORT` before reaching the Synthesizer if a hard policy is violated (e.g. an unmitigable HIGH-risk security flag, a payload that looks like an injection attempt).
+- Hard cap of 3 rounds (configurable via `MAX_ROUNDS`).
+- Never invents counselor ids; can only pick from configured ones.
 
 ## Roadmap
 

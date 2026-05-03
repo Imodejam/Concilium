@@ -3,7 +3,7 @@
 _Owner: claudebot — last updated 2026-05-03_
 
 ## Vision (one-liner)
-Multi-LLM deliberation platform. A decision request is dispatched in parallel to several "counselors" (LLMs with a role); a **Synthesizer** (Praeses Concilii) always produces one final decision with motivation, confidence and risk level.
+Multi-LLM deliberation platform. A decision request is dispatched to several "counselors" (LLMs, often from different providers). A **Praeses Concilii** orchestrates the deliberation across rounds; a separate **Synthesizer** ("Princeps") takes the final decision. Two distinct roles on purpose: governance of the discussion is decoupled from the act of deciding.
 
 ## Stack
 | Layer | Tech | Notes |
@@ -69,7 +69,9 @@ concilium/
 - **No user auth**: API protected by a static bearer token (env `API_TOKEN`); the Telegram bot is restricted by user_id allowlist.
 - **No code-runner**: counselors produce **only** structured JSON.
 - **No CoT stored**: after `JSON.parse`-ing the response, raw text is discarded.
-- **Counselors run in parallel** (not sequential): faster, cost remains acceptable at 5–7 counselors.
+- **Counselors run in parallel** within a round (not sequential).
+- **Multi-round deliberation**: hard cap 3 rounds (env `MAX_ROUNDS`). Praeses decides each round whether to INVOKE more counselors, CONCLUDE (hand off to Synthesizer), or ABORT.
+- **Praeses ↔ Synthesizer separation**: two independent counselor roles in `data/counselors/`. The Praeses is hybrid (deterministic skeleton in the orchestrator + adaptive LLM call). All policies (security/cost/PII/coverage/escalation) live in the Praeses' system prompt, not in YAML.
 - **Default provider Anthropic Claude Sonnet** (excellent reasoning, native prompt caching).
 
 ## Out of scope (future TODOs)

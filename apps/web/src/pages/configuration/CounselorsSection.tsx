@@ -11,6 +11,7 @@ const ROLES: CounselorConfig['role'][] = [
   'ux',
   'legal',
   'critic',
+  'praeses',
   'synthesizer',
 ];
 
@@ -82,6 +83,9 @@ export default function CounselorsSection({ setError }: Props) {
               <p className="font-mono text-senate-gold">{s.id}</p>
               <div className="flex items-center gap-1 text-[10px] uppercase">
                 {!s.enabled && <span className="text-rose-400 px-1.5 py-0.5 rounded bg-rose-500/10">disabled</span>}
+                {s.role === 'praeses' && (
+                  <span className="text-purple-300 px-1.5 py-0.5 rounded bg-purple-500/10">praeses</span>
+                )}
                 {s.role === 'synthesizer' && (
                   <span className="text-amber-300 px-1.5 py-0.5 rounded bg-amber-500/10">synthesizer</span>
                 )}
@@ -217,6 +221,11 @@ function CounselorForm({ providers, initial, onCancel, onSaved, onError }: {
           className="input font-mono text-sm" placeholder="You are an Architect Counselor: …" spellCheck={false} />
       </Field>
 
+      {role === 'praeses' && (
+        <p className="text-xs text-purple-300 bg-purple-500/10 border border-purple-500/30 rounded p-2">
+          ⚠️ Praeses orchestrates the deliberation (chooses which counselors to invoke each round, applies policies, writes the conflict report) but does NOT take the final decision. At least one must be enabled for the council to deliberate.
+        </p>
+      )}
       {role === 'synthesizer' && (
         <p className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded p-2">
           ⚠️ Synthesizer counselors produce the final decision. At least one must be enabled for the council to deliberate.

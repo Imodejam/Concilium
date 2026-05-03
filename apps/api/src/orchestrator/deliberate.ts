@@ -24,8 +24,13 @@ import {
   buildCounselorUserPrompt,
   buildSynthesizerUserPrompt,
 } from './prompts.js';
+import {
+  PRAESES_JSON_HINT,
+  PRAESES_SYSTEM_PROMPT,
+  buildPraesesUserPrompt,
+  parsePraesesPlan,
+} from './praeses.js';
 
-/** Strip ```json fences (if any) and parse. */
 function parseJson(text: string): unknown {
   const trimmed = text.trim();
   const fenced = trimmed.match(/```(?:json)?\s*\n([\s\S]*?)\n```/);
@@ -60,27 +65,33 @@ async function callCounselor(
     created_at: new Date().toISOString(),
     duration_ms: Date.now() - start,
   };
-  // Re-validate (defensive: sometimes the parser is lenient).
   return ContributionSchema.parse(contribution);
 }
 
 export async function runDeliberation(req: StoredRequest): Promise<void> {
   const startedAt = Date.now();
   const allCounselors = await listCounselors();
-  const synthesizer = allCounselors.find(
-    (s) => s.config.role === 'synthesizer' && s.config.enabled,
-  );
+
+  const praeses = allCounselors.find((c) => c.config.role === 'praeses' && c.config.enabled);
+  if (!praeses) {
+    await markFailed(req, 'No enabled Praeses counselor configured');
+    return;
+  }
+  const synthesizer = allCounselors.find((c) => c.config.role === 'synthesizer' && c.config.enabled);
   if (!synthesizer) {
     await markFailed(req, 'No enabled Synthesizer counselor configured');
     return;
   }
+
   const reviewers = allCounselors.filter(
-    (s) => s.config.role !== 'synthesizer' && s.config.enabled,
+    (c) => c.config.role !== 'praeses' && c.config.role !== 'synthesizer' && c.config.enabled,
   );
   if (reviewers.length === 0) {
     await markFailed(req, 'No reviewer counselors configured');
     return;
   }
+  const reviewerById = new Map(reviewers.map((r) => [r.config.id, r] as const));
+  const availableIds = new Set(reviewers.map((r) => r.config.id));
 
   await saveRequest({
     ...req,
@@ -90,54 +101,154 @@ export async function runDeliberation(req: StoredRequest): Promise<void> {
 
   const contributions: Contribution[] = [];
   const failures: { counselor_id: string; error: string }[] = [];
+  const maxRounds = config.deliberation.maxRounds;
+  let conflictReport = '';
+  let abortReason: string | null = null;
 
-  await Promise.all(
-    reviewers.map(async (rec) => {
+  for (let round = 1; round <= maxRounds; round++) {
+    await appendAudit({
+      ts: new Date().toISOString(),
+      kind: 'praeses.invoked',
+      request_id: req.request_id,
+      counselor_id: praeses.config.id,
+      details: { round, model: praeses.config.model, contribution_count: contributions.length },
+    });
+
+    let plan;
+    try {
+      const provider = await getProvider(praeses.config.provider_id);
+      const result = await withRetry(
+        () =>
+          provider.call({
+            model: praeses.config.model,
+            systemPrompt: PRAESES_SYSTEM_PROMPT + '\n\n' + praeses.systemPrompt,
+            userPrompt: buildPraesesUserPrompt({
+              req,
+              round,
+              maxRounds,
+              availableCounselors: reviewers.map((r) => r.config),
+              contributions,
+            }),
+            jsonHint: PRAESES_JSON_HINT,
+            timeoutMs: config.llm.timeoutMs,
+            maxTokens: 1500,
+          }),
+        config.llm.retries,
+      );
+      plan = parsePraesesPlan(result.rawText, availableIds);
+    } catch (err) {
+      const message = (err as Error).message ?? String(err);
       await appendAudit({
         ts: new Date().toISOString(),
-        kind: 'counselor.invoked',
+        kind: 'praeses.failed',
         request_id: req.request_id,
-        counselor_id: rec.config.id,
-        details: { role: rec.config.role, model: rec.config.model },
+        counselor_id: praeses.config.id,
+        details: { round, error: message },
       });
-      try {
-        const contrib = await callCounselor(req, rec);
-        await saveContribution(contrib);
-        contributions.push(contrib);
+      await markFailed(req, `Praeses failed at round ${round}: ${message}`);
+      return;
+    }
+
+    await appendAudit({
+      ts: new Date().toISOString(),
+      kind: 'praeses.planned',
+      request_id: req.request_id,
+      counselor_id: praeses.config.id,
+      details: {
+        round,
+        action: plan.action,
+        rationale: plan.rationale,
+        counselors_to_invoke: plan.counselors_to_invoke,
+      },
+    });
+
+    if (plan.action === 'ABORT') {
+      abortReason = plan.abort_reason ?? plan.rationale;
+      await appendAudit({
+        ts: new Date().toISOString(),
+        kind: 'praeses.aborted',
+        request_id: req.request_id,
+        counselor_id: praeses.config.id,
+        details: { round, abort_reason: abortReason },
+      });
+      await markFailed(req, `Aborted by Praeses: ${abortReason}`);
+      return;
+    }
+
+    if (plan.action === 'CONCLUDE') {
+      conflictReport = plan.conflict_report ?? plan.rationale;
+      await appendAudit({
+        ts: new Date().toISOString(),
+        kind: 'praeses.concluded',
+        request_id: req.request_id,
+        counselor_id: praeses.config.id,
+        details: { round, conflict_report: conflictReport },
+      });
+      break;
+    }
+
+    // INVOKE
+    const toRun = plan.counselors_to_invoke
+      .map((id) => reviewerById.get(id))
+      .filter((r): r is CounselorRecord => Boolean(r));
+    if (toRun.length === 0) {
+      // Praeses asked INVOKE but produced no valid ids — treat as CONCLUDE on existing contribs.
+      conflictReport = plan.rationale + ' (Praeses returned no valid counselor ids; concluding.)';
+      break;
+    }
+
+    await Promise.all(
+      toRun.map(async (rec) => {
         await appendAudit({
           ts: new Date().toISOString(),
-          kind: 'counselor.responded',
+          kind: 'counselor.invoked',
           request_id: req.request_id,
           counselor_id: rec.config.id,
-          details: {
-            recommendation: contrib.output.recommendation,
-            risk_level: contrib.output.risk_level,
-            duration_ms: contrib.duration_ms,
-          },
+          details: { round, role: rec.config.role, model: rec.config.model },
         });
-      } catch (err) {
-        const message = (err as Error).message ?? String(err);
-        failures.push({ counselor_id: rec.config.id, error: message });
-        await appendAudit({
-          ts: new Date().toISOString(),
-          kind: 'counselor.failed',
-          request_id: req.request_id,
-          counselor_id: rec.config.id,
-          details: { error: message },
-        });
-      }
-    }),
-  );
+        try {
+          const contrib = await callCounselor(req, rec);
+          await saveContribution(contrib);
+          contributions.push(contrib);
+          await appendAudit({
+            ts: new Date().toISOString(),
+            kind: 'counselor.responded',
+            request_id: req.request_id,
+            counselor_id: rec.config.id,
+            details: {
+              round,
+              recommendation: contrib.output.recommendation,
+              risk_level: contrib.output.risk_level,
+              duration_ms: contrib.duration_ms,
+            },
+          });
+        } catch (err) {
+          const message = (err as Error).message ?? String(err);
+          failures.push({ counselor_id: rec.config.id, error: message });
+          await appendAudit({
+            ts: new Date().toISOString(),
+            kind: 'counselor.failed',
+            request_id: req.request_id,
+            counselor_id: rec.config.id,
+            details: { round, error: message },
+          });
+        }
+      }),
+    );
+
+    if (round === maxRounds) {
+      conflictReport = '(Max rounds reached without explicit CONCLUDE from Praeses.)';
+    }
+  }
 
   if (contributions.length === 0) {
     await markFailed(
       req,
-      `All counselors failed: ${failures.map((f) => `${f.counselor_id}=${f.error}`).join('; ')}`,
+      `No contributions collected: ${failures.map((f) => `${f.counselor_id}=${f.error}`).join('; ')}`,
     );
     return;
   }
 
-  // ── Synthesizer ──────────────────────────────────────────────────────────
   await appendAudit({
     ts: new Date().toISOString(),
     kind: 'synthesizer.invoked',
@@ -146,6 +257,7 @@ export async function runDeliberation(req: StoredRequest): Promise<void> {
     details: {
       model: synthesizer.config.model,
       contribution_count: contributions.length,
+      has_conflict_report: Boolean(conflictReport),
     },
   });
 
@@ -157,7 +269,7 @@ export async function runDeliberation(req: StoredRequest): Promise<void> {
         provider.call({
           model: synthesizer.config.model,
           systemPrompt: SYNTHESIZER_SYSTEM_PROMPT + '\n\n' + synthesizer.systemPrompt,
-          userPrompt: buildSynthesizerUserPrompt(req, contributions),
+          userPrompt: buildSynthesizerUserPrompt(req, contributions, conflictReport),
           jsonHint: SYNTHESIZER_JSON_HINT,
           timeoutMs: config.llm.timeoutMs,
           maxTokens: 1500,
@@ -176,7 +288,7 @@ export async function runDeliberation(req: StoredRequest): Promise<void> {
     };
     const raw = parseJson(result.rawText) as RawDecision;
     const modelsUsed = Array.from(
-      new Set([...contributions.map((c) => c.model), result.modelUsed]),
+      new Set([...contributions.map((c) => c.model), result.modelUsed, praeses.config.model]),
     );
     decisionOutput = DecisionOutputSchema.parse({
       request_id: req.request_id,

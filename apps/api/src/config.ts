@@ -11,4 +11,7 @@ export const config = {
     timeoutMs: 60_000,
     retries: 2,
   },
+  deliberation: {
+    maxRounds: parseInt(process.env.MAX_ROUNDS ?? '3', 10),
+  },
 };

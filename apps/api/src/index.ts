@@ -139,23 +139,23 @@ app.post('/counselors', async (req, reply) => {
 });
 
 app.delete<{ Params: { id: string } }>('/counselors/:id', async (req, reply) => {
-  // Refuse to delete the last enabled Synthesizer — without it the senate
-  // cannot produce a final decision.
   const all = await listCounselors();
   const target = all.find((s) => s.config.id === req.params.id);
   if (!target) {
     reply.code(404).send({ error: 'Counselor not found' });
     return;
   }
-  if (target.config.role === 'synthesizer' && target.config.enabled) {
-    const otherSynthesizers = all.filter(
-      (s) => s.config.role === 'synthesizer' && s.config.enabled && s.config.id !== target.config.id,
-    );
-    if (otherSynthesizers.length === 0) {
-      reply.code(409).send({
-        error: 'Refusing to delete the only enabled Synthesizer. Add another one first or disable this one.',
-      });
-      return;
+  for (const role of ['synthesizer', 'praeses'] as const) {
+    if (target.config.role === role && target.config.enabled) {
+      const others = all.filter(
+        (s) => s.config.role === role && s.config.enabled && s.config.id !== target.config.id,
+      );
+      if (others.length === 0) {
+        reply.code(409).send({
+          error: `Refusing to delete the only enabled ${role === 'synthesizer' ? 'Synthesizer' : 'Praeses'}. Add another one first or disable this one.`,
+        });
+        return;
+      }
     }
   }
   const removed = await deleteCounselor(req.params.id);

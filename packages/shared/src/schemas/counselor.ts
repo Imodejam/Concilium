@@ -8,6 +8,7 @@ export const CounselorRoleSchema = z.enum([
   'ux',
   'legal',
   'critic',
+  'praeses',
   'synthesizer',
 ]);
 export type CounselorRole = z.infer<typeof CounselorRoleSchema>;

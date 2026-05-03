@@ -8,6 +8,11 @@ export const AuditEventSchema = z.object({
   ts: z.string(),
   kind: z.enum([
     'request.received',
+    'praeses.invoked',
+    'praeses.planned',
+    'praeses.aborted',
+    'praeses.concluded',
+    'praeses.failed',
     'counselor.invoked',
     'counselor.responded',
     'counselor.failed',

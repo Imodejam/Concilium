@@ -49,7 +49,11 @@ Strict rules:
 - Set requires_human_confirmation = true when the decision carries high risks or irreversible impact.
 - No chains of thought, no preamble: respond only with the requested JSON.`;
 
-export function buildSynthesizerUserPrompt(req: StoredRequest, contribs: Contribution[]): string {
+export function buildSynthesizerUserPrompt(
+  req: StoredRequest,
+  contribs: Contribution[],
+  conflictReport = '',
+): string {
   const blocks = contribs
     .map((c) => `### ${c.counselor_role.toUpperCase()} — ${c.counselor_id}\n${JSON.stringify(c.output, null, 2)}`)
     .join('\n\n');
@@ -73,6 +77,12 @@ export function buildSynthesizerUserPrompt(req: StoredRequest, contribs: Contrib
     'Council contributions:',
     blocks,
     '',
+    conflictReport
+      ? `Praeses conflict report (read this before deciding):\n${conflictReport}`
+      : '',
+    '',
     'Now synthesize the final decision.',
-  ].join('\n');
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
