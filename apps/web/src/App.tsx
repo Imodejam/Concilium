@@ -14,11 +14,8 @@ export default function App({ children }: PropsWithChildren) {
       <header className="border-b border-zinc-800 bg-zinc-950/95 backdrop-blur sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
           <div className="flex items-center justify-between gap-3">
-            <Link to="/" className="flex items-center gap-2">
-              <span className="text-2xl">🏛️</span>
-              <span className="font-display text-lg sm:text-xl font-bold text-senate-gold tracking-wider">
-                CONCILIUM
-              </span>
+            <Link to="/" className="flex items-center gap-2 bg-stone-100 rounded-md px-2 py-1">
+              <img src="/logo-wordmark.png" alt="Concilium" className="h-7 sm:h-8 w-auto" />
             </Link>
             <span className="hidden md:inline text-xs text-zinc-500 sm:ml-auto sm:order-3">
               Praeses Concilii is watching.
