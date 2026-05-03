@@ -135,6 +135,14 @@ bot.command('debug', async (ctx) => {
   }
 });
 
+await bot.telegram.setMyCommands([
+  { command: 'start', description: 'Welcome and command list' },
+  { command: 'new', description: 'Create a new request: /new <title>' },
+  { command: 'status', description: 'List the last 5 requests' },
+  { command: 'decision', description: 'Show a decision: /decision <id>' },
+  { command: 'debug', description: 'Per-counselor contributions: /debug <id>' },
+]);
+
 bot.launch().then(() => console.log('Concilium Telegram bot running'));
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
