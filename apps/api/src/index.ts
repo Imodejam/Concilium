@@ -15,7 +15,9 @@ import {
   loadDecision,
   listDecisions,
   listSenators,
+  loadSenator,
   saveSenator,
+  deleteSenator,
   listProviders,
   saveProvider,
   listContributionsForRequest,
@@ -107,7 +109,16 @@ app.get<{ Params: { id: string } }>('/decisions/:id', async (req, reply) => {
 // ── Senators ───────────────────────────────────────────────────────────────
 app.get('/senators', async () => {
   const records = await listSenators();
-  return { data: records.map((r) => r.config) };
+  return { data: records.map((r) => ({ ...r.config, systemPrompt: r.systemPrompt })) };
+});
+
+app.get<{ Params: { id: string } }>('/senators/:id', async (req, reply) => {
+  const record = await loadSenator(req.params.id);
+  if (!record) {
+    reply.code(404).send({ error: 'Senator not found' });
+    return;
+  }
+  return { data: { ...record.config, systemPrompt: record.systemPrompt } };
 });
 
 app.post('/senators', async (req, reply) => {
@@ -117,8 +128,36 @@ app.post('/senators', async (req, reply) => {
     reply.code(400).send({ error: 'Invalid senator', details: parsed.success ? null : parsed.error.flatten() });
     return;
   }
+  if (!/^[a-z0-9][a-z0-9_-]*$/i.test(parsed.data.id)) {
+    reply.code(400).send({ error: 'Invalid senator id (use letters/digits/_/-)' });
+    return;
+  }
   await saveSenator({ config: parsed.data, systemPrompt: body.systemPrompt });
   reply.code(201).send({ data: parsed.data });
+});
+
+app.delete<{ Params: { id: string } }>('/senators/:id', async (req, reply) => {
+  // Refuse to delete the last enabled Synthesizer — without it the senate
+  // cannot produce a final decision.
+  const all = await listSenators();
+  const target = all.find((s) => s.config.id === req.params.id);
+  if (!target) {
+    reply.code(404).send({ error: 'Senator not found' });
+    return;
+  }
+  if (target.config.role === 'synthesizer' && target.config.enabled) {
+    const otherSynthesizers = all.filter(
+      (s) => s.config.role === 'synthesizer' && s.config.enabled && s.config.id !== target.config.id,
+    );
+    if (otherSynthesizers.length === 0) {
+      reply.code(409).send({
+        error: 'Refusing to delete the only enabled Synthesizer. Add another one first or disable this one.',
+      });
+      return;
+    }
+  }
+  const removed = await deleteSenator(req.params.id);
+  reply.code(removed ? 204 : 404).send();
 });
 
 // ── Providers ──────────────────────────────────────────────────────────────

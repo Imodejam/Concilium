@@ -115,6 +115,17 @@ export async function saveSenator(record: SenatorRecord): Promise<void> {
   await writeMd(file, record.config as unknown as Record<string, unknown>, record.systemPrompt + '\n');
 }
 
+export async function deleteSenator(senatorId: string): Promise<boolean> {
+  const file = path.join(paths.senators, `${senatorId}.md`);
+  try {
+    await (await import('node:fs')).promises.unlink(file);
+    return true;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return false;
+    throw err;
+  }
+}
+
 // ── Providers ──────────────────────────────────────────────────────────────
 
 export async function listProviders(): Promise<ProviderConfig[]> {
