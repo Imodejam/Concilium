@@ -23,6 +23,13 @@ export const CounselorConfigSchema = z.object({
   display_name: z.string().min(1),
   provider_id: z.string().min(1),       // refers to /data/providers/{id}.md
   model: z.string().min(1),             // e.g. "claude-sonnet-4-6"
+  /**
+   * Optional reasoning_effort hint forwarded to providers that support it
+   * (currently OpenAI gpt-5.x). Pass-through string — the provider adapter
+   * decides whether and how to send it. Unknown values surface as the API's
+   * own error.
+   */
+  reasoning_effort: z.string().optional(),
   weight: z.number().positive().default(1.0), // informative; Synthesizer doesn't average
   enabled: z.boolean().default(true),
 });

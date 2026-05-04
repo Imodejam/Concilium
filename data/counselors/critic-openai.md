@@ -1,9 +1,10 @@
 ---
 id: critic-openai
 role: critic
-display_name: Critic (OpenAI)
+display_name: Critic (OpenAI gpt-5.4 xhigh)
 provider_id: openai-default
-model: gpt-4o
+model: gpt-5.4
+reasoning_effort: xhigh
 weight: 1.0
 enabled: true
 ---

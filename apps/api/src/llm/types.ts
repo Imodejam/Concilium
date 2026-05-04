@@ -9,6 +9,12 @@ export interface LlmCallOptions {
   jsonHint?: string;
   /** Per-call timeout (ms). Falls back to provider default if missing. */
   timeoutMs?: number;
+  /**
+   * Provider-specific hint for reasoning depth (OpenAI gpt-5.x:
+   * minimal | low | medium | high | xhigh). Adapters that don't
+   * support it ignore the field.
+   */
+  reasoningEffort?: string;
 }
 
 export interface LlmResult {

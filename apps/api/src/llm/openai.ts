@@ -24,16 +24,37 @@ export class OpenAIProvider implements LlmProvider {
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), timeoutMs);
     try {
+      // OpenAI's reasoning models (gpt-5.x, o1, o3, ...) reject the
+      // legacy `max_tokens` parameter — they require `max_completion_tokens`.
+      // We detect them by either an explicit reasoning_effort hint or a
+      // model id that starts with one of the known reasoning families.
+      const isReasoning =
+        !!opts.reasoningEffort
+        || /^(o1|o3|gpt-5)/i.test(opts.model);
+      const tokenCap = opts.maxTokens ?? 1024;
+      const baseParams: Record<string, unknown> = {
+        model: opts.model,
+        response_format: opts.jsonHint ? { type: 'json_object' as const } : undefined,
+        messages: [
+          { role: 'system' as const, content: opts.systemPrompt },
+          { role: 'user' as const, content: userMsg },
+        ],
+      };
+      if (isReasoning) {
+        baseParams.max_completion_tokens = tokenCap;
+      } else {
+        baseParams.max_tokens = tokenCap;
+      }
+      // gpt-5.x reasoning models accept a reasoning_effort parameter
+      // (minimal/low/medium/high/xhigh). The current openai SDK typings
+      // don't list it on the chat.completions schema yet, so we feed
+      // the raw object via an `unknown` cast — unknown values bubble
+      // up as a 400 from OpenAI itself.
+      if (opts.reasoningEffort) {
+        baseParams.reasoning_effort = opts.reasoningEffort;
+      }
       const res = await this.client.chat.completions.create(
-        {
-          model: opts.model,
-          max_tokens: opts.maxTokens ?? 1024,
-          response_format: opts.jsonHint ? { type: 'json_object' } : undefined,
-          messages: [
-            { role: 'system', content: opts.systemPrompt },
-            { role: 'user', content: userMsg },
-          ],
-        },
+        baseParams as unknown as Parameters<typeof this.client.chat.completions.create>[0] & { stream?: false },
         { signal: ac.signal },
       );
       const choice = res.choices?.[0];

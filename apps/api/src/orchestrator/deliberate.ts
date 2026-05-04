@@ -52,6 +52,7 @@ async function callCounselor(
         userPrompt: buildCounselorUserPrompt(req),
         jsonHint: COUNSELOR_JSON_HINT,
         timeoutMs: config.llm.timeoutMs,
+        reasoningEffort: rec.config.reasoning_effort,
       }),
     config.llm.retries,
   );
@@ -132,6 +133,7 @@ export async function runDeliberation(req: StoredRequest): Promise<void> {
             jsonHint: PRAESES_JSON_HINT,
             timeoutMs: config.llm.timeoutMs,
             maxTokens: 1500,
+            reasoningEffort: praeses.config.reasoning_effort,
           }),
         config.llm.retries,
       );
@@ -273,6 +275,7 @@ export async function runDeliberation(req: StoredRequest): Promise<void> {
           jsonHint: SYNTHESIZER_JSON_HINT,
           timeoutMs: config.llm.timeoutMs,
           maxTokens: 1500,
+          reasoningEffort: synthesizer.config.reasoning_effort,
         }),
       config.llm.retries,
     );
