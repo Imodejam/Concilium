@@ -31,7 +31,14 @@ export class OpenAIProvider implements LlmProvider {
       const isReasoning =
         !!opts.reasoningEffort
         || /^(o1|o3|gpt-5)/i.test(opts.model);
-      const tokenCap = opts.maxTokens ?? 1024;
+      // Reasoning models count their hidden chain-of-thought against the
+      // same token cap as the visible answer. With reasoning_effort=high
+      // /xhigh the model can easily burn 1k+ tokens before emitting a
+      // single output token, and the call comes back as 'empty content'
+      // (Stefano, msg 988: 77/136 critic-openai invocations failed with
+      // exactly that error). Bump the default cap for reasoning models
+      // so there's room for both the chain-of-thought AND a useful reply.
+      const tokenCap = opts.maxTokens ?? (isReasoning ? 8000 : 1024);
       const baseParams: Record<string, unknown> = {
         model: opts.model,
         response_format: opts.jsonHint ? { type: 'json_object' as const } : undefined,
