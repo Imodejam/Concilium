@@ -103,6 +103,42 @@ app.get<{ Params: { id: string } }>('/requests/:id/audit', async (req) => {
   return { data };
 });
 
+// Manually abort a deliberation that's stuck or no longer wanted.
+// Marks the StoredRequest as FAILED and stamps `aborted_at`. The
+// orchestrator's runDeliberation reads aborted_at at every checkpoint
+// and stops without overwriting the user-driven FAILED state.
+app.post<{ Params: { id: string }; Body: { reason?: string } }>(
+  '/requests/:id/abort',
+  async (req, reply) => {
+    const stored = await loadRequest(req.params.id);
+    if (!stored) {
+      reply.code(404).send({ error: 'Request not found' });
+      return;
+    }
+    if (stored.status === 'COMPLETED') {
+      reply.code(409).send({ error: 'Request already completed' });
+      return;
+    }
+    const now = new Date().toISOString();
+    const reason = req.body?.reason?.slice(0, 500) ?? 'Aborted by user';
+    const next: StoredRequest = {
+      ...stored,
+      status: 'FAILED',
+      updated_at: now,
+      aborted_at: now,
+      aborted_reason: reason,
+    };
+    await saveRequest(next);
+    await appendAudit({
+      ts: now,
+      kind: 'request.aborted',
+      request_id: stored.request_id,
+      details: { reason },
+    });
+    reply.code(200).send({ data: next });
+  },
+);
+
 // ── Decisions ──────────────────────────────────────────────────────────────
 app.get('/decisions', async () => {
   const data = await listDecisions();

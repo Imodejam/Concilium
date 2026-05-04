@@ -32,6 +32,11 @@ export const api = {
   getRequestAudit: (id: string) => http<AuditEvent[]>(`/requests/${id}/audit`),
   createRequest:   (body: RequestInput) =>
     http<StoredRequest>('/requests', { method: 'POST', body: JSON.stringify(body) }),
+  abortRequest:    (id: string, reason?: string) =>
+    http<StoredRequest>(`/requests/${id}/abort`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
   listDecisions:   () => http<DecisionOutput[]>('/decisions'),
   getDecision:     (id: string) =>
     http<{ decision: DecisionOutput; contributions: Contribution[]; request: StoredRequest | null }>(`/decisions/${id}`),

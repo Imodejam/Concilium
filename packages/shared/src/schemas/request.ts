@@ -86,5 +86,13 @@ export const StoredRequestSchema = RequestInputSchema.extend({
   created_at: z.string(),
   updated_at: z.string(),
   decision_id: z.string().uuid().optional(),
+  /**
+   * ISO timestamp at which the user manually aborted the deliberation
+   * via POST /requests/:id/abort. When set, the orchestrator stops
+   * progressing the request at the next checkpoint instead of
+   * overwriting the user-driven FAILED state.
+   */
+  aborted_at: z.string().optional(),
+  aborted_reason: z.string().optional(),
 });
 export type StoredRequest = z.infer<typeof StoredRequestSchema>;

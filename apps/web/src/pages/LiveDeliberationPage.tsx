@@ -73,14 +73,25 @@ export default function LiveDeliberationPage() {
       <header className="space-y-2">
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <StatusBadge status={request.status} />
-          <span className="text-xs text-zinc-500 inline-flex items-center gap-1.5">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            polling every {POLL_INTERVAL_MS / 1000}s
-          </span>
+          {!TERMINAL.has(request.status) && (
+            <span className="text-xs text-zinc-500 inline-flex items-center gap-1.5">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              polling every {POLL_INTERVAL_MS / 1000}s
+            </span>
+          )}
           <span className="text-xs text-zinc-500 sm:ml-auto">{request.intent} · {request.domain}</span>
+          {!TERMINAL.has(request.status) && (
+            <AbortButton requestId={request.request_id} onAborted={(updated) => setState((s) => s ? { ...s, request: updated } : s)} />
+          )}
         </div>
         <h1 className="font-display text-xl sm:text-2xl text-senate-gold">{request.title}</h1>
         <p className="text-zinc-500 text-xs sm:text-sm font-mono break-all">request_id: {request.request_id}</p>
+        {request.aborted_at && (
+          <p className="text-rose-300 text-xs">
+            Aborted at {new Date(request.aborted_at).toLocaleString()}
+            {request.aborted_reason && ` — ${request.aborted_reason}`}
+          </p>
+        )}
       </header>
 
       {request.context && (
@@ -143,6 +154,39 @@ function groupAuditByRound(events: AuditEvent[]): RoundEvents[] {
     if (e.kind === 'praeses.planned') r.praesesAction = e.details?.action as string | undefined;
   }
   return Array.from(map.values()).sort((a, b) => a.round - b.round);
+}
+
+function AbortButton({ requestId, onAborted }: { requestId: string; onAborted: (r: StoredRequest) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function abort() {
+    if (!window.confirm('Abort this deliberation? The current state will be marked as FAILED.')) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const updated = await api.abortRequest(requestId, 'Aborted from web dashboard');
+      onAborted(updated);
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="inline-flex items-center gap-2">
+      <button
+        type="button"
+        onClick={abort}
+        disabled={busy}
+        className="text-xs px-2 py-0.5 rounded border border-rose-500/40 text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 disabled:opacity-50"
+      >
+        {busy ? 'Aborting…' : 'Abort'}
+      </button>
+      {err && <span className="text-xs text-rose-300">{err}</span>}
+    </div>
+  );
 }
 
 function StatusBadge({ status }: { status: string }) {

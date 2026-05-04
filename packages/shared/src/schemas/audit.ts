@@ -20,6 +20,7 @@ export const AuditEventSchema = z.object({
     'synthesizer.responded',
     'decision.persisted',
     'request.failed',
+    'request.aborted',
   ]),
   request_id: z.string().uuid().optional(),
   counselor_id: z.string().optional(),

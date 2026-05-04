@@ -1,8 +1,8 @@
 ---
 id: critic
 role: critic
-display_name: Critic (Claude)
-provider_id: anthropic-default
+display_name: Critic (Claude Code CLI)
+provider_id: claude-code-default
 model: claude-sonnet-4-6
 weight: 1
 enabled: true

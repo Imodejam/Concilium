@@ -11,6 +11,7 @@ import { config } from '../config.js';
 import {
   appendAudit,
   listCounselors,
+  loadRequest,
   saveContribution,
   saveDecision,
   saveRequest,
@@ -94,6 +95,15 @@ export async function runDeliberation(req: StoredRequest): Promise<void> {
   const reviewerById = new Map(reviewers.map((r) => [r.config.id, r] as const));
   const availableIds = new Set(reviewers.map((r) => r.config.id));
 
+  // Helper: a user-driven abort writes aborted_at to the stored request.
+  // We re-read the request at every checkpoint and bail out before the
+  // next saveRequest so we don't trample the user-driven FAILED state.
+  async function abortedByUser(): Promise<boolean> {
+    const fresh = await loadRequest(req.request_id);
+    return !!fresh?.aborted_at;
+  }
+
+  if (await abortedByUser()) return;
   await saveRequest({
     ...req,
     status: 'IN_PROGRESS',
@@ -107,6 +117,7 @@ export async function runDeliberation(req: StoredRequest): Promise<void> {
   let abortReason: string | null = null;
 
   for (let round = 1; round <= maxRounds; round++) {
+    if (await abortedByUser()) return;
     await appendAudit({
       ts: new Date().toISOString(),
       kind: 'praeses.invoked',
