@@ -2,7 +2,7 @@
 id: cost
 role: cost
 display_name: Cost
-provider_id: anthropic-default
+provider_id: claude-code-default
 model: claude-haiku-4-5-20251001
 weight: 1.0
 enabled: true

@@ -108,7 +108,20 @@ function spawnCollect(
   timeoutMs: number,
 ): Promise<SpawnResult> {
   return new Promise<SpawnResult>((resolve, reject) => {
-    const child = spawn(command, args, { stdio: ['pipe', 'pipe', 'pipe'] });
+    // Stefano (msg 1118): the `claude` binary picks up ANTHROPIC_API_KEY
+    // from the environment as its top priority — if Concilium's own .env
+    // sets it (used by the anthropic-default HTTP provider), claude
+    // ignores the local subscription auth and falls back to the API
+    // call, defeating the whole reason we wired the CLI provider.
+    // Strip the variable from the spawn env so claude uses
+    // ~/.claude/ subscription credentials.
+    const cleanEnv = { ...process.env };
+    delete cleanEnv.ANTHROPIC_API_KEY;
+    delete cleanEnv.ANTHROPIC_AUTH_TOKEN;
+    const child = spawn(command, args, {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: cleanEnv,
+    });
     let stdout = '';
     let stderr = '';
     let timedOut = false;
