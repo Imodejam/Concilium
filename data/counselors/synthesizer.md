@@ -3,7 +3,7 @@ id: synthesizer
 role: synthesizer
 display_name: Princeps
 provider_id: claude-code-default
-model: claude-opus-4-7
+model: claude-haiku-4-5-20251001
 weight: 1.0
 enabled: true
 ---
